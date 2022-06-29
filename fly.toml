@@ -1,1 +1,5 @@
 app = "np-ssd-assignment-1"
+
+[build]
+builder = "paketobuildpacks/builder:base"
+buildpacks = ["gcr.io/paketo-buildpacks/nodejs"]
