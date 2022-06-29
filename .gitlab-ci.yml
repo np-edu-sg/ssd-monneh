@@ -1,0 +1,10 @@
+stages:
+  - deploy
+
+Deploy:
+  stage: deploy
+  before_script:
+    - curl -L https://fly.io/install.sh | sh
+  script:
+    - fly deploy
+    - fly status
