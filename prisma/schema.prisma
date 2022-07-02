@@ -13,40 +13,37 @@ generator js {
 }
 
 model Organization {
-    id      Int @id @default(autoincrement())
+    id      Int      @id @default(autoincrement())
     name    String
-
     wallets Wallet[]
     users   User[]
 }
 
 model User {
-    id                      Int @id @default(autoincrement())
-    email                   String
-    firstName               String
-    lastName                String
-    passwordHash            String
-
-    organizations           Organization[]
-    reviewedTransactions    Transaction[]   @relation("CreatedTransactions")
-    createdTransactions     Transaction[]   @relation("ReviewedTransactions")
+    id                   Int            @id @default(autoincrement())
+    email                String
+    firstName            String
+    lastName             String
+    passwordHash         String
+    organizations        Organization[]
+    reviewedTransactions Transaction[]  @relation("CreatedTransactions")
+    createdTransactions  Transaction[]  @relation("ReviewedTransactions")
 }
 
 model Wallet {
-    id              Int @id @default(autoincrement())
-    name            String
-    balance         Decimal
-
-    organization    Organization    @relation(fields: [organizationId], references: [id])
-    organizationId  Int
+    id             Int          @id @default(autoincrement())
+    name           String
+    balance        Decimal
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    organizationId Int
 }
 
 model Transaction {
-    id              Int         @id @default(autoincrement())
-    dateTime        DateTime
-    spendDateTime   DateTime
-    creator         User        @relation("CreatedTransactions", fields: [creatorId], references: [id])
-    creatorId       Int
-    reviewer        User?       @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
-    reviewerId      Int?
+    id            Int      @id @default(autoincrement())
+    dateTime      DateTime
+    spendDateTime DateTime
+    creator       User     @relation("CreatedTransactions", fields: [creatorId], references: [id])
+    creatorId     Int
+    reviewer      User?    @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
+    reviewerId    Int?
 }
