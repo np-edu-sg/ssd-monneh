@@ -7,9 +7,14 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "nuxt": "3.0.0-rc.4"
+    "nuxt": "3.0.0-rc.4",
+    "nuxt-windicss": "^2.4.2",
+    "prisma": "^4.0.0"
   },
   "dependencies": {
+    "@prisma/client": "^4.0.0",
+    "consola": "^2.15.3",
+    "jose": "^4.8.3",
     "zod": "^3.17.3"
   }
 }
