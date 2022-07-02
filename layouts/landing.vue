@@ -2,8 +2,7 @@
 import {useFetch, useRequestHeaders} from "#imports";
 
 const {error, pending} = await useFetch(`/api/auth/whoami`, {
-    headers: useRequestHeaders(['cookie']),
-    server: false
+    headers: useRequestHeaders(['cookie'])
 })
 </script>
 
