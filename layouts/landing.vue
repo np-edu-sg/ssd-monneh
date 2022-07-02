@@ -2,7 +2,7 @@
 const {error, pending} = await useWhoAmI()
 </script>
 <template>
-    <div class="h-screen container mx-auto p-5">
+    <div class="h-screen container mx-auto p-5 font-sans">
         <header class="flex justify-between items-center">
             <span class="font-semibold text-lg">
                 Monneh

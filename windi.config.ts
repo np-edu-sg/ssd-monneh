@@ -8,6 +8,9 @@ export default defineConfig({
         primary: colors.indigo,
         secondary: colors.green,
         background: colors.slate
+      },
+      fontFamily: {
+        sans: ['Fira Sans']
       }
     }
   }
