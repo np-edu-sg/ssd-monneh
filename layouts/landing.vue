@@ -14,10 +14,10 @@ const { error, pending } = await useFetch('/api/auth/whoami', {
           Monneh
         </span>
 
-        <SharedButton v-if="pending || error" variant="alternative" href="/auth/login">
+        <SharedButton v-if="pending || error" variant="alternative" href="/auth/login" size="sm">
           Login
         </SharedButton>
-        <SharedButton v-else href="/dashboard">
+        <SharedButton v-else href="/dashboard" size="sm">
           Dashboard
         </SharedButton>
       </header>
