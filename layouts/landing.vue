@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import {useFetch, useRequestHeaders} from "#imports";
+import { useFetch, useRequestHeaders } from '#imports'
 
-const {error, pending} = await useFetch(`/api/auth/whoami`, {
-    headers: useRequestHeaders(['cookie'])
+const { error, pending } = await useFetch('/api/auth/whoami', {
+  headers: useRequestHeaders(['cookie']),
 })
 </script>
 
 <template>
-    <div class="h-screen bg-background-100">
-        <div class="p-5 container mx-auto font-sans">
-            <header class="flex justify-between items-center">
-                <span class="font-semibold text-lg">
-                    Monneh
-                </span>
+  <div class="h-screen bg-background-100">
+    <div class="p-3 container mx-auto font-sans">
+      <header class="my-5 flex justify-between items-center">
+        <span class="font-semibold text-lg">
+          Monneh
+        </span>
 
-                <SharedButton variant="alternative" v-if="pending || error">Login</SharedButton>
-                <SharedButton v-else>Dashboard</SharedButton>
-            </header>
+        <SharedButton v-if="pending || error" variant="alternative" href="/auth/login">
+          Login
+        </SharedButton>
+        <SharedButton v-else href="/dashboard">
+          Dashboard
+        </SharedButton>
+      </header>
 
-            <main>
-                <slot></slot>
-            </main>
-        </div>
+      <main>
+        <slot />
+      </main>
     </div>
+  </div>
 </template>
