@@ -4,7 +4,7 @@ import { createError, defineEventHandler, setCookie, useBody } from 'h3'
 import * as z from 'zod'
 import * as jose from 'jose'
 import { useRuntimeConfig } from '#imports'
-import prisma from '~/prisma/client'
+import { ERROR_BAD_REQUEST, ERROR_EMAIL_CONFLICT, createErrorResponse, usePrisma } from '~/server/utils'
 
 const bodySchema = z.object({
   firstName: z.string().min(1, 'must not be empty'),
@@ -14,20 +14,12 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const prisma = await usePrisma()
   const body = await useBody(event)
 
   const result = await bodySchema.safeParseAsync(body)
-  if (!result.success) {
-    return createError({
-      statusCode: 400,
-      statusMessage: 'Bad request',
-      data: {
-        issues: {
-          issues: result.error.issues,
-        },
-      },
-    })
-  }
+  if (!result.success)
+    return createErrorResponse(event, ERROR_BAD_REQUEST, result.error.issues)
 
   const passwordHash = await new Promise<string>((resolve, reject) => {
     const salt = randomBytes(16).toString('hex')
@@ -45,12 +37,8 @@ export default defineEventHandler(async (event) => {
       email,
     },
   })
-  if (user) {
-    return createError({
-      statusCode: 409,
-      statusMessage: 'Conflict',
-    })
-  }
+  if (user)
+    return createErrorResponse(event, ERROR_EMAIL_CONFLICT)
 
   user = await prisma.user.create({
     data: {

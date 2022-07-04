@@ -9,7 +9,7 @@ datasource db {
 
 generator js {
     provider        = "prisma-client-js"
-    previewFeatures = ["referentialIntegrity"]
+    previewFeatures = ["referentialIntegrity", "interactiveTransactions"]
 }
 
 model Organization {
