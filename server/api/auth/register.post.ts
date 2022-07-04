@@ -55,6 +55,7 @@ export default defineEventHandler(async (event) => {
     .setIssuedAt()
     .setIssuer(jwtIssuer)
     .setExpirationTime(jwtExpirationTime)
+    .setSubject(user.id.toString())
     .sign(Buffer.from(jwtSecret, 'utf-8'))
 
   setCookie(event, jwtCookieName, jwt, { httpOnly: true })

@@ -21,7 +21,13 @@ const model = casbin.newModelFromString(`
   m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && r.obj == p.obj && r.act == p.act
 `)
 
+let adapter: casbin.Adapter
+let enforcer: casbin.Enforcer
+
 export async function useCasbin() {
-  const adapter = await PrismaAdapter.newAdapter()
-  return await casbin.newEnforcer(model, adapter)
+  if (!adapter)
+    adapter = await PrismaAdapter.newAdapter()
+  if (!enforcer)
+    enforcer = await casbin.newEnforcer(model, adapter)
+  return enforcer
 }
