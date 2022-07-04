@@ -13,15 +13,17 @@ if (!error.value)
 
 const form = reactive({
   email: '',
+  firstName: '',
+  lastName: '',
   password: '',
   loading: false,
   error: null,
 })
 
-async function login() {
+async function register() {
   form.loading = true
   try {
-    await $fetch('/api/auth/login', { method: 'POST', body: form, credentials: 'same-origin' })
+    await $fetch('/api/auth/register', { method: 'POST', body: form, credentials: 'same-origin' })
     await router.push('/dashboard')
   }
   catch (error) {
@@ -33,11 +35,15 @@ async function login() {
 
 <template>
   <section>
-    <h1 class="text-5xl font-semibold py-1/4 pb-10">
-      Login
+    <h1 class="text-5xl font-semibold py-1/6 pb-10">
+      Register
     </h1>
 
-    <form @submit.prevent="login">
+    <form @submit.prevent="register">
+      <SharedTextInput v-model="form.firstName" label="First name" placeholder="Guan" />
+      <br>
+      <SharedTextInput v-model="form.lastName" label="Last name" placeholder="Qin" />
+      <br>
       <SharedTextInput v-model="form.email" type="email" label="Email" placeholder="qinguan@monneh.sg" />
       <br>
       <SharedTextInput v-model="form.password" type="password" label="Password" placeholder="******" />

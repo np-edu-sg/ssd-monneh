@@ -12,7 +12,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue'])
 
 const inputClasses = [
-  'p-3 mt-2 md:w-75 lg:w-100 bg-background-100 border-background-300 text-background-900 text-base rounded-lg outline-0 block border',
+  'p-3 mt-2 w-full sm:w-75 lg:w-100 bg-background-100 border-background-300 text-background-900 text-base rounded-lg outline-0 block border',
   'focus:(ring-2 ring-primary-300 border-primary-500)',
   'dark:(bg-background-700 border-background-600 placeholder-background-400 text-background-50)',
 ]
