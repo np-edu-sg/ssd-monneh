@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useAsyncData, useFetch, useRequestHeaders, useRoute } from '#imports'
+import { useRoute } from '#imports'
 
 const route = useRoute()
-const { pending, error, data } = await useUserInfo()
+const { pending, error } = await useUserInfo()
 </script>
 
 <template>

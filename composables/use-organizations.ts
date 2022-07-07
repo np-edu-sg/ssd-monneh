@@ -1,4 +1,4 @@
-import { useAsyncData, useFetch, useRequestHeaders } from '#imports'
+import { useAsyncData, useRequestHeaders } from '#imports'
 
 export default function () {
   return useAsyncData('/api/organization', () =>
