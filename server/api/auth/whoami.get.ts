@@ -1,21 +1,19 @@
-import { createError, defineEventHandler } from 'h3'
-import * as jose from 'jose'
+import { defineEventHandler, useCookie } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { ERROR_UNAUTHORIZED, createErrorResponse } from '~/server/utils'
+import { verifyJWT } from '~/server/utils/jwt'
 
 /**
  * Endpoint to let SPAs know if the user is authenticated
  */
 export default defineEventHandler(async (event) => {
-  const cookies = useCookies(event)
-
-  const { jwtCookieName, jwtSecret } = useRuntimeConfig()
-  if (!cookies[jwtCookieName])
+  const { jwtCookieName } = useRuntimeConfig()
+  const cookie = useCookie(event, jwtCookieName)
+  if (!cookie)
     return createErrorResponse(event, ERROR_UNAUTHORIZED)
 
   try {
-    const { payload } = await jose.jwtVerify(cookies[jwtCookieName], Buffer.from(jwtSecret, 'utf-8'))
-    return payload
+    return await verifyJWT(cookie)
   }
   catch (err) {
     return createErrorResponse(event, ERROR_UNAUTHORIZED)

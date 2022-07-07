@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3'
-import { ERROR_UNAUTHORIZED, createErrorResponse, usePrisma, useUserInfo } from '~/server/utils'
+import { ERROR_UNAUTHORIZED, createErrorResponse, useCasbin, usePrisma, useUserInfo } from '~/server/utils'
 
 export default defineEventHandler(async (event) => {
   const user = await useUserInfo(event)
@@ -7,9 +7,10 @@ export default defineEventHandler(async (event) => {
     return createErrorResponse(event, ERROR_UNAUTHORIZED)
 
   const prisma = await usePrisma()
+  const casbin = await useCasbin()
 
   return await prisma.$transaction(async (prisma) => {
-    const organization = prisma.organization.create({
+    const organization = await prisma.organization.create({
       data: {
         name: 'ACME Organization',
         wallets: {
@@ -22,11 +23,13 @@ export default defineEventHandler(async (event) => {
         },
         users: {
           connect: {
-            id: parseInt(user.payload.sub!, 10),
+            id: user.id,
           },
         },
       },
     })
+
+    await casbin.addPolicy(user.id.toString(), organization.id.toString(), 'wallet', 'allow')
 
     return organization
   })

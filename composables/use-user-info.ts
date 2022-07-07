@@ -1,7 +1,10 @@
-import { useFetch, useRequestHeaders } from '#imports'
+import { useAsyncData, useRequestHeaders } from '#imports'
 
 export default function () {
-  return useFetch('/api/auth/whoami', {
-    headers: useRequestHeaders(['cookie']),
-  })
+  return useAsyncData('/api/auth/whoami', () =>
+    $fetch('/api/auth/whoami', {
+      headers: useRequestHeaders(['cookie']),
+      credentials: 'same-origin',
+    }),
+  )
 }

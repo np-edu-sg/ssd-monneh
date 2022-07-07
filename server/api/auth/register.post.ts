@@ -5,6 +5,7 @@ import * as z from 'zod'
 import * as jose from 'jose'
 import { useRuntimeConfig } from '#imports'
 import { ERROR_BAD_REQUEST, ERROR_EMAIL_CONFLICT, createErrorResponse, usePrisma } from '~/server/utils'
+import { createJWT } from '~/server/utils/jwt'
 
 const bodySchema = z.object({
   firstName: z.string().min(1, 'must not be empty'),
@@ -49,14 +50,8 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  const { jwtSecret, jwtIssuer, jwtExpirationTime, jwtCookieName } = useRuntimeConfig()
-  const jwt = await new jose.SignJWT({ firstName, lastName, email, id: user.id })
-    .setProtectedHeader({ alg: 'HS512' })
-    .setIssuedAt()
-    .setIssuer(jwtIssuer)
-    .setExpirationTime(jwtExpirationTime)
-    .setSubject(user.id.toString())
-    .sign(Buffer.from(jwtSecret, 'utf-8'))
+  const { jwtCookieName } = useRuntimeConfig()
+  const jwt = await createJWT(user)
 
   setCookie(event, jwtCookieName, jwt, { httpOnly: true })
 

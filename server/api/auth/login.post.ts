@@ -1,10 +1,10 @@
 import { scrypt } from 'node:crypto'
-import { createError, defineEventHandler, setCookie, useBody } from 'h3'
+import { defineEventHandler, setCookie, useBody } from 'h3'
 
 import * as z from 'zod'
-import * as jose from 'jose'
 import { useRuntimeConfig } from '#imports'
 import { ERROR_BAD_REQUEST, ERROR_LOGIN_FAILED, createErrorResponse, usePrisma } from '~/server/utils'
+import { createJWT } from '~/server/utils/jwt'
 
 const bodySchema = z.object({
   email: z.string().min(1, 'must not be empty').email('must be a valid email'),
@@ -44,15 +44,8 @@ export default defineEventHandler(async (event) => {
     return createErrorResponse(event, ERROR_LOGIN_FAILED)
 
   // Generate JWT
-  const { firstName, lastName, email, id } = user
-  const { jwtSecret, jwtIssuer, jwtExpirationTime, jwtCookieName } = useRuntimeConfig()
-  const jwt = await new jose.SignJWT({ firstName, lastName, email, id })
-    .setProtectedHeader({ alg: 'HS512' })
-    .setIssuedAt()
-    .setIssuer(jwtIssuer)
-    .setExpirationTime(jwtExpirationTime)
-    .setSubject(id.toString())
-    .sign(Buffer.from(jwtSecret, 'utf-8'))
+  const { jwtCookieName } = useRuntimeConfig()
+  const jwt = await createJWT(user)
 
   setCookie(event, jwtCookieName, jwt, { httpOnly: true })
 
