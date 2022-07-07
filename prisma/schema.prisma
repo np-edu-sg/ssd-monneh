@@ -36,16 +36,20 @@ model Wallet {
     balance        Decimal
     organization   Organization @relation(fields: [organizationId], references: [id])
     organizationId Int
+    transactions   Transaction[]
 }
 
 model Transaction {
-    id            Int      @id @default(autoincrement())
-    dateTime      DateTime
-    spendDateTime DateTime
-    creator       User     @relation("CreatedTransactions", fields: [creatorId], references: [id])
-    creatorId     Int
-    reviewer      User?    @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
-    reviewerId    Int?
+    id                  Int      @id @default(autoincrement())
+    wallet              Wallet   @relation(fields: [walletId], references: [id])
+    walletId            Int
+    entryDateTime       DateTime
+    spendDateTime       DateTime
+    creator             User     @relation("CreatedTransactions", fields: [creatorId], references: [id])
+    creatorId           Int
+    reviewer            User?    @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
+    reviewerId          Int?
+    transactionValue    Decimal
 }
 
 model CasbinRule {
