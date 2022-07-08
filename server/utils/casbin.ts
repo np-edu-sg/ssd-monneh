@@ -29,6 +29,5 @@ export async function useCasbin() {
     adapter = await PrismaAdapter.newAdapter()
   if (!enforcer)
     enforcer = await casbin.newEnforcer(model, adapter)
-  await enforcer.addNamedDomainMatchingFunc('g', casbin.Util.keyMatch2Func)
   return enforcer
 }

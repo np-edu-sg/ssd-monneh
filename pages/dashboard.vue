@@ -6,16 +6,30 @@ definePageMeta({
 })
 
 const { data: organizations, pending, error } = await useOrganizations()
+
+async function createSampleOrganization() {
+  await $fetch('/api/organization/seed', { method: 'POST' })
+}
 </script>
 
 <template>
-  <div>
-    This can only be seen when you're logged in
-  </div>
+  <section class="py-3 flex flex-1 flex-col">
+    <h1 class="font-semibold text-3xl">
+      Your organizations
+    </h1>
 
-  {{ organizations }}
-  <br>
-  {{ pending }}
-  <br>
-  {{ error }}
+    <div v-if="organizations.length === 0" class="p-5 md:p-10 flex flex-1 flex-col items-center justify-center">
+      <h2 class="text-2xl">
+        You have no organizations
+      </h2>
+      <br>
+      <SharedButton variant="secondary" @click="createSampleOrganization">
+        Create a sample organization
+      </SharedButton>
+    </div>
+    <div v-for="{ id, name } in organizations" v-else :key="id">
+      {{ id }}
+      {{ name }}
+    </div>
+  </section>
 </template>

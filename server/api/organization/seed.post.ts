@@ -29,7 +29,15 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    await casbin.addPolicy(user.id.toString(), organization.id.toString(), 'wallet', 'allow')
+    await Promise.all([
+      casbin.addPolicy('root', organization.id.toString(), 'wallet', 'read'),
+      casbin.addPolicy('root', organization.id.toString(), 'wallet', 'write'),
+      casbin.addPolicy('root', organization.id.toString(), 'wallet', 'delete'),
+      casbin.addPolicy('root', organization.id.toString(), 'transaction', 'read'),
+      casbin.addPolicy('root', organization.id.toString(), 'transaction', 'write'),
+      casbin.addPolicy('root', organization.id.toString(), 'transaction', 'delete'),
+      casbin.addGroupingPolicy(user.id.toString(), 'root', organization.id.toString()),
+    ])
 
     return organization
   })
