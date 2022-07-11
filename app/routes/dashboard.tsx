@@ -23,6 +23,7 @@ import {json} from "@remix-run/node";
 import {db} from "~/utils/db.server";
 import {requireUserId} from "~/utils/session.server";
 import type {Organization} from '@prisma/client'
+import {ChevronRight} from "tabler-icons-react";
 
 interface LoaderData {
   organizations: Organization[]
@@ -87,6 +88,7 @@ export default function DashboardLayout() {
           }}>
           <MediaQuery largerThan="sm" styles={{display: 'none'}}>
             <Burger
+              title={'Menu'}
               opened={opened}
               onClick={() => setOpened((o) => !o)}
               size="sm"
@@ -110,18 +112,18 @@ export default function DashboardLayout() {
         </Header>
       }
       navbar={
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}>
+        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}} style={{display: 'flex', flexDirection: 'column'}}>
           <Text weight={600}>Your organizations</Text>
           <br/>
           {data.organizations.length === 0 ? (
             <Text>Nothing here... create one!</Text>
           ) : (
-            <Group direction={'column'}>
+            <Group direction={'column'} position={'apart'}>
               {data.organizations.map((organization, idx) => (
                 <UnstyledButton onClick={() => console.log('try focusing button with tab')} key={idx} style={{
                   width: '100%'
                 }}>
-                  <Group>
+                  <Group grow={false} noWrap>
                     <Avatar size={30} color="blue">{organization.name[0]}</Avatar>
                     <Text component={'span'} style={{
                       overflow: 'hidden',
@@ -139,6 +141,16 @@ export default function DashboardLayout() {
           <div>
             <Button variant={'outline'}>New +</Button>
           </div>
+
+          <Group style={{flex: 1}} align={'flex-end'}>
+            <Group style={{width: '100%'}} align={'center'} position={'apart'}>
+              <Group>
+                <Avatar size={30} color={'violet'}>Q</Avatar>
+                Qin Guan
+              </Group>
+              <ChevronRight></ChevronRight>
+            </Group>
+          </Group>
         </Navbar>
       }
       aside={

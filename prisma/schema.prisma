@@ -16,7 +16,19 @@ model Organization {
     id      Int      @id @default(autoincrement())
     name    String
     wallets Wallet[]
+    roles   Role[]
     users   User[]
+}
+
+model Role {
+    id                  Int           @id @default(autoincrement())
+    type                String
+    sensitivityLevel    Int
+    organization        Organization  @relation(fields: [organizationId], references: [id])
+    organizationId      Int
+    users               User[]
+    grantedWallets      Wallet[]
+    blockedTransactions Transaction[]
 }
 
 model User {
@@ -28,28 +40,32 @@ model User {
     organizations        Organization[]
     reviewedTransactions Transaction[]  @relation("ReviewedTransactions")
     createdTransactions  Transaction[]  @relation("CreatedTransactions")
+    roles                Role[]
 }
 
 model Wallet {
-    id             Int          @id @default(autoincrement())
+    id             Int           @id @default(autoincrement())
     name           String
     balance        Decimal
-    organization   Organization @relation(fields: [organizationId], references: [id])
+    organization   Organization  @relation(fields: [organizationId], references: [id])
     organizationId Int
     transactions   Transaction[]
+    grantedFor     Role[]
 }
 
 model Transaction {
-    id                  Int      @id @default(autoincrement())
-    wallet              Wallet   @relation(fields: [walletId], references: [id])
-    walletId            Int
-    entryDateTime       DateTime
-    spendDateTime       DateTime
-    creator             User     @relation("CreatedTransactions", fields: [creatorId], references: [id])
-    creatorId           Int
-    reviewer            User?    @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
-    reviewerId          Int?
-    transactionValue    Decimal
+    id               Int      @id @default(autoincrement())
+    wallet           Wallet   @relation(fields: [walletId], references: [id])
+    walletId         Int
+    entryDateTime    DateTime
+    spendDateTime    DateTime
+    sensitivity      Int
+    creator          User     @relation("CreatedTransactions", fields: [creatorId], references: [id])
+    creatorId        Int
+    reviewer         User?    @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
+    reviewerId       Int?
+    transactionValue Decimal
+    blockedFor       Role[]
 }
 
 model CasbinRule {

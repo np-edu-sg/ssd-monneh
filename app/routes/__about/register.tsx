@@ -69,13 +69,9 @@ export default function RegisterPage() {
 
   return (
     <Center component={'section'} style={{height: '100%'}}>
-      <Box sx={theme => ({
-        backgroundColor: theme.colorScheme === 'dark' ? theme.fn.rgba(theme.colors.blue[9], 0.7) : theme.colors.blue[0],
-        borderColor: theme.colorScheme === 'dark' ? theme.colors.blue[4] : theme.colors.blue[7],
-        borderWidth: 1,
-        borderStyle: 'solid',
-        borderRadius: theme.radius.sm,
+      <Center sx={theme => ({
         padding: theme.spacing.lg,
+        flexDirection: 'column',
         marginBottom: '10%',
         width: '100%',
         [theme.fn.largerThan('xs')]: {
@@ -96,8 +92,7 @@ export default function RegisterPage() {
         })}>
           <TextInput
             size={'md'}
-            label="First name"
-            placeholder="Qin"
+            placeholder="First name"
             error={data?.errors?.firstName}
             {...form.getInputProps('firstName')}
           />
@@ -106,8 +101,7 @@ export default function RegisterPage() {
 
           <TextInput
             size={'md'}
-            label="Last name"
-            placeholder="Guan"
+            placeholder="Last name"
             error={data?.errors?.lastName}
             {...form.getInputProps('lastName')}
           />
@@ -116,8 +110,7 @@ export default function RegisterPage() {
 
           <TextInput
             size={'md'}
-            label="Email"
-            placeholder="qinguan@gmail.com"
+            placeholder="Email"
             error={data?.errors?.email}
             {...form.getInputProps('email')}
           />
@@ -126,7 +119,6 @@ export default function RegisterPage() {
 
           <PasswordInput
             size={'md'}
-            label="Password"
             placeholder="Password"
             error={data?.errors?.password}
             {...form.getInputProps('password')}
@@ -134,9 +126,9 @@ export default function RegisterPage() {
 
           <br/>
 
-          <Button type={'submit'}>Register</Button>
+          <Button type={'submit'} fullWidth>Register</Button>
         </Form>
-      </Box>
+      </Center>
     </Center>
   )
 }

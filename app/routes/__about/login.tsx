@@ -65,13 +65,9 @@ export default function LoginPage() {
 
   return (
     <Center component={'section'} style={{height: '100%'}}>
-      <Box p={'lg'} mb={'10%'} sx={theme => ({
-        backgroundColor: theme.colorScheme === 'dark' ? theme.fn.rgba(theme.colors.violet[9], 0.7) : theme.colors.violet[0],
-        borderColor: theme.colorScheme === 'dark' ? theme.colors.violet[4] : theme.colors.violet[7],
-        borderWidth: 2,
-        borderStyle: 'solid',
-        borderRadius: theme.radius.sm,
+      <Center inline p={'lg'} mb={'10%'} sx={theme => ({
         width: '100%',
+        flexDirection: 'column',
         [theme.fn.largerThan('xs')]: {
           width: '45%'
         },
@@ -83,16 +79,15 @@ export default function LoginPage() {
         }
       })}>
         <Text component={'h1'} size={'xl'} style={{marginTop: 0}}>
-          Login
+          Login to Monneh
         </Text>
         <Form onSubmit={form.onSubmit(async (values) => {
           submit(values, {method: 'post'})
         })}>
           <TextInput
             size={'md'}
-            label={"Email"}
             type={'email'}
-            placeholder="qinguan@gmail.com"
+            placeholder="Email Address"
             error={data?.errors?.email}
             {...form.getInputProps('email')}
           />
@@ -101,7 +96,6 @@ export default function LoginPage() {
 
           <PasswordInput
             size={'md'}
-            label="Password"
             placeholder="Password"
             error={data?.errors?.password}
             {...form.getInputProps('password')}
@@ -109,9 +103,9 @@ export default function LoginPage() {
 
           <br/>
 
-          <Button type={'submit'} color={'violet'}>Login</Button>
+          <Button type={'submit'} color={'violet'} fullWidth>Login</Button>
         </Form>
-      </Box>
+      </Center>
     </Center>
   )
 }

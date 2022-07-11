@@ -10,7 +10,7 @@ interface LoaderData {
 
 export const loader: LoaderFunction = async ({request}) => {
   const user = await getUserSession(request)
-  return json({isAuthenticated: !!user})
+  return json({isAuthenticated: !!user.get('id')})
 }
 
 export default function AboutLayout() {
