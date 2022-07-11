@@ -16,6 +16,7 @@
     "@mantine/rte": "^4.2.12",
     "@mantine/spotlight": "^4.2.12",
     "@mantine/ssr": "^4.2.12",
+    "@prisma/client": "^4.0.0",
     "@remix-run/node": "^1.6.4",
     "@remix-run/react": "^1.6.4",
     "@remix-run/vercel": "^1.6.4",
@@ -31,6 +32,7 @@
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "eslint": "^8.15.0",
+    "prisma": "^4.0.0",
     "typescript": "^4.6.4"
   },
   "engines": {
