@@ -114,8 +114,7 @@ export default function DashboardLayout() {
         </Header>
       }
       navbar={
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}
-                style={{display: 'flex', flexDirection: 'column'}}>
+        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}>
           <Text weight={600}>Your organizations</Text>
           <br/>
           {data.organizations.length === 0 ? (
@@ -146,7 +145,8 @@ export default function DashboardLayout() {
           </div>
 
           <Group style={{flex: 1}} align={'flex-end'}>
-            <Group style={{width: '100%'}} align={'center'} position={'apart'}>
+            <Group style={{width: '100%', cursor: 'pointer'}} align={'center'} position={'apart'}
+                   onClick={() => navigate('/dashboard/profile')}>
               <Group>
                 <Avatar size={30} color={'violet'}>{data.user.firstName[0]}</Avatar>
                 <Text>
