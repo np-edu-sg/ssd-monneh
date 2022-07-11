@@ -1,19 +1,19 @@
 import {Box, Button, Center, PasswordInput, Text, TextInput} from "@mantine/core";
 import type {ActionFunction} from "@remix-run/node";
 import {json} from "@remix-run/node";
-import {Form, useSubmit} from "@remix-run/react";
+import {Form, useActionData, useSubmit} from "@remix-run/react";
 import {useForm} from "@mantine/form";
 import * as z from 'zod'
 
 import {createUserSession, login} from "~/utils/session.server";
 
 interface ActionData {
-  errors?: z.ZodIssue[] | Record<string, string>
+  errors?: Record<string, string>
 }
 
 const bodySchema = z.object({
-  email: z.string().min(1, 'Email must not be empty').email('Email must be valid'),
-  password: z.string().min(1, 'Password must not be empty'),
+  email: z.string().min(1, 'Email is required').email('Invalid email'),
+  password: z.string().min(1, 'Password is required'),
 })
 
 export const action: ActionFunction = async ({request}) => {
@@ -25,8 +25,11 @@ export const action: ActionFunction = async ({request}) => {
 
   if (!result.success) {
     return json<ActionData>({
-      errors: result.error.issues
-    })
+      errors: result.error.issues.reduce<Record<string, string>>((a, v) => {
+        a[v.path.toString()] = v.message
+        return a
+      }, {})
+    }, {status: 400})
   }
 
   const user = await login({
@@ -36,9 +39,9 @@ export const action: ActionFunction = async ({request}) => {
   if (!user) {
     return json<ActionData>({
       errors: {
-        email: 'Invalid email or password'
+        password: 'Invalid email or password'
       }
-    })
+    }, {status: 403})
   }
 
   return createUserSession(user.id.toString(), '/dashboard')
@@ -46,6 +49,8 @@ export const action: ActionFunction = async ({request}) => {
 
 export default function LoginPage() {
   const submit = useSubmit()
+  const data = useActionData<ActionData>()
+
   const form = useForm({
     initialValues: {
       email: '',
@@ -54,16 +59,16 @@ export default function LoginPage() {
 
     validate: {
       email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-      password: (value) => (value.length > 0 ? null : 'Invalid password')
+      password: (value) => (value.length > 0 ? null : 'Password is required')
     },
   });
 
   return (
     <Center component={'section'} style={{height: '100%'}}>
       <Box p={'lg'} mb={'10%'} sx={theme => ({
-        backgroundColor: theme.colors.violet[0],
-        borderColor: theme.colors.violet[7],
-        borderWidth: 1,
+        backgroundColor: theme.colorScheme === 'dark' ? theme.fn.rgba(theme.colors.violet[9], 0.7) : theme.colors.violet[0],
+        borderColor: theme.colorScheme === 'dark' ? theme.colors.violet[4] : theme.colors.violet[7],
+        borderWidth: 2,
         borderStyle: 'solid',
         borderRadius: theme.radius.sm,
         width: '100%',
@@ -80,14 +85,15 @@ export default function LoginPage() {
         <Text component={'h1'} size={'xl'} style={{marginTop: 0}}>
           Login
         </Text>
-        <Form onSubmit={form.onSubmit((values) => {
+        <Form onSubmit={form.onSubmit(async (values) => {
           submit(values, {method: 'post'})
         })}>
           <TextInput
             size={'md'}
-            required
-            label="Email"
+            label={"Email"}
+            type={'email'}
             placeholder="qinguan@gmail.com"
+            error={data?.errors?.email}
             {...form.getInputProps('email')}
           />
 
@@ -95,9 +101,9 @@ export default function LoginPage() {
 
           <PasswordInput
             size={'md'}
-            required
             label="Password"
             placeholder="Password"
+            error={data?.errors?.password}
             {...form.getInputProps('password')}
           />
 

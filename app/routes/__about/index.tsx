@@ -13,7 +13,16 @@ const useStyles = createStyles((theme) => ({
 export default function LandingPage() {
   const {classes} = useStyles()
   return (
-    <section>
+    <Box component={"section"} sx={theme => ({
+      [theme.fn.largerThan('sm')]: {
+        paddingLeft: '1rem',
+        paddingRight: '1rem'
+      },
+      [theme.fn.largerThan('md')]: {
+        paddingLeft: '8rem',
+        paddingRight: '8rem'
+      }
+    })}>
       <Text component={'h1'} className={classes.heading}>
         Cash flow management
         <br/>
@@ -32,6 +41,6 @@ export default function LandingPage() {
       >
         Get started
       </Button>
-    </section>
+    </Box>
   )
 }
