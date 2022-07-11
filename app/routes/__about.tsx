@@ -1,8 +1,21 @@
 import {AppShell, Button, Center, Header, Text} from "@mantine/core";
-import {Link, NavLink, Outlet, useNavigate} from "@remix-run/react";
+import {NavLink, Outlet, useLoaderData, useNavigate} from "@remix-run/react";
+import type {LoaderFunction} from "@remix-run/node";
+import {json} from "@remix-run/node";
+import {getUserSession} from "~/utils/session.server";
+
+interface LoaderData {
+  isAuthenticated: boolean
+}
+
+export const loader: LoaderFunction = async ({request}) => {
+  const user = await getUserSession(request)
+  return json({isAuthenticated: !!user})
+}
 
 export default function AboutLayout() {
   const navigate = useNavigate()
+  const data = useLoaderData<LoaderData>()
 
   function toLanding() {
     navigate('/', {replace: true})
@@ -18,15 +31,17 @@ export default function AboutLayout() {
           justifyContent: 'space-between'
         }}>
           <Text weight={600} size={'lg'} onClick={toLanding} style={{cursor: 'pointer'}}>
-              Monneh
+            Monneh
           </Text>
           <Center sx={theme => ({gap: theme.spacing.sm, display: 'flex'})}>
-            <NavLink to={'login'}>
-              <Button variant={'outline'}>Login</Button>
-            </NavLink>
-            <NavLink to={'register'}>
-              <Button variant={'gradient'}>Register</Button>
-            </NavLink>
+            {data.isAuthenticated ? (
+              <Button component={NavLink} to={'dashboard'} variant={'outline'}>Dashboard</Button>
+            ) : (
+              <>
+                <Button component={NavLink} to={'login'} variant={'outline'}>Login</Button>
+                <Button component={NavLink} to={'register'} variant={'gradient'}>Register</Button>
+              </>
+            )}
           </Center>
         </Header>
       }

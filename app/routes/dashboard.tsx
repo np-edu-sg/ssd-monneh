@@ -1,22 +1,52 @@
+import {useState} from "react";
 import {
   ActionIcon,
   AppShell,
   Aside,
+  Avatar,
   Burger,
+  Button,
+  Group,
   Header,
   MediaQuery,
   Navbar,
   Text,
+  UnstyledButton,
   useMantineColorScheme,
   useMantineTheme
 } from "@mantine/core";
-import {Outlet, useNavigate} from "@remix-run/react";
-import {useState} from "react";
+import {Outlet, useLoaderData, useNavigate} from "@remix-run/react";
 import {MoonStars, Sun} from "tabler-icons-react";
+import type {LoaderFunction} from "@remix-run/node";
+import {json} from "@remix-run/node";
+
+import {db} from "~/utils/db.server";
+import {requireUserId} from "~/utils/session.server";
+import type {Organization} from '@prisma/client'
+
+interface LoaderData {
+  organizations: Organization[]
+}
+
+export const loader: LoaderFunction = async ({request}) => {
+  const id = await requireUserId(request)
+  const organizations = await db.organization.findMany({
+    where: {
+      users: {
+        every: {
+          id
+        }
+      }
+    }
+  })
+  return json<LoaderData>({organizations})
+}
 
 export default function DashboardLayout() {
   const navigate = useNavigate()
   const theme = useMantineTheme()
+
+  const data = useLoaderData<LoaderData>()
 
   const [opened, setOpened] = useState(false);
   const {colorScheme, toggleColorScheme} = useMantineColorScheme();
@@ -81,7 +111,34 @@ export default function DashboardLayout() {
       }
       navbar={
         <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}>
-          <Text>Application navbar</Text>
+          <Text weight={600}>Your organizations</Text>
+          <br/>
+          {data.organizations.length === 0 ? (
+            <Text>Nothing here... create one!</Text>
+          ) : (
+            <Group direction={'column'}>
+              {data.organizations.map((organization, idx) => (
+                <UnstyledButton onClick={() => console.log('try focusing button with tab')} key={idx} style={{
+                  width: '100%'
+                }}>
+                  <Group>
+                    <Avatar size={30} color="blue">{organization.name[0]}</Avatar>
+                    <Text component={'span'} style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {organization.name}
+                    </Text>
+                  </Group>
+                </UnstyledButton>
+              ))}
+            </Group>
+          )}
+          <br/>
+          <div>
+            <Button variant={'outline'}>New +</Button>
+          </div>
         </Navbar>
       }
       aside={

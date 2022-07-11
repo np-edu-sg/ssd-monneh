@@ -32,7 +32,7 @@ const storage = createCookieSessionStorage({
   },
 });
 
-function getUserSession(request: Request) {
+export function getUserSession(request: Request) {
   return storage.getSession(request.headers.get("Cookie"));
 }
 
@@ -90,30 +90,30 @@ export async function login({email, password,}: LoginForm) {
   return {id: user.id};
 }
 
-export async function requireUserId(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname
-) {
-  const session = await getUserSession(request);
-  const userId = session.get("userId");
-  if (!userId || typeof userId !== "string") {
-    const searchParams = new URLSearchParams([
-      ["redirectTo", redirectTo],
-    ]);
-    throw redirect(`/login?${searchParams}`);
-  }
-  return userId;
-}
-
 export async function createUserSession(
-  userId: string,
+  userId: number,
   redirectTo: string
 ) {
   const session = await storage.getSession();
-  session.set("userId", userId);
+  session.set("id", userId);
   return redirect(redirectTo, {
     headers: {
       "Set-Cookie": await storage.commitSession(session),
     },
   });
+}
+
+export async function requireUserId(
+  request: Request,
+  redirectTo: string = new URL(request.url).pathname
+) {
+  const session = await getUserSession(request);
+  const id = session.get("id");
+  if (!id || typeof id !== "number") {
+    const searchParams = new URLSearchParams([
+      ["redirectTo", redirectTo],
+    ]);
+    throw redirect(`/login?${searchParams}`);
+  }
+  return id;
 }

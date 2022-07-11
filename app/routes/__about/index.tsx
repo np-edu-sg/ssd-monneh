@@ -12,6 +12,7 @@ const useStyles = createStyles((theme) => ({
 
 export default function LandingPage() {
   const {classes} = useStyles()
+
   return (
     <Box component={"section"} sx={theme => ({
       [theme.fn.largerThan('sm')]: {
