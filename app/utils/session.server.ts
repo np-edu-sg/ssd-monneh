@@ -1,18 +1,25 @@
 import {randomBytes, scrypt} from 'node:crypto'
-import {createCookieSessionStorage, redirect,} from "@remix-run/node";
+import {createCookieSessionStorage, redirect} from "@remix-run/node";
 
 import {db} from "./db.server";
 
-type LoginForm = {
+interface LoginForm {
   email: string;
   password: string;
-};
+}
 
 interface RegisterForm {
   firstName: string
   lastName: string
   email: string
   password: string
+}
+
+export interface UserSessionData {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
 }
 
 const {SESSION_SECRET, SESSION_COOKIE_NAME} = process.env;
@@ -65,7 +72,7 @@ export async function register({firstName, lastName, email, password}: RegisterF
     },
   })
 
-  return {id: user.id};
+  return user;
 }
 
 export async function login({email, password,}: LoginForm) {
@@ -87,15 +94,18 @@ export async function login({email, password,}: LoginForm) {
   })
   if (!passwordValid) return null
 
-  return {id: user.id};
+  return user;
 }
 
 export async function createUserSession(
-  userId: number,
+  {id, firstName, lastName, email}: UserSessionData,
   redirectTo: string
 ) {
   const session = await storage.getSession();
-  session.set("id", userId);
+  session.set("id", id);
+  session.set("email", email);
+  session.set("firstName", firstName);
+  session.set("lastName", lastName);
   return redirect(redirectTo, {
     headers: {
       "Set-Cookie": await storage.commitSession(session),
@@ -103,17 +113,23 @@ export async function createUserSession(
   });
 }
 
-export async function requireUserId(
+export async function requireUser(
   request: Request,
   redirectTo: string = new URL(request.url).pathname
-) {
+): Promise<UserSessionData> {
   const session = await getUserSession(request);
   const id = session.get("id");
+  console.log(id)
   if (!id || typeof id !== "number") {
     const searchParams = new URLSearchParams([
       ["redirectTo", redirectTo],
     ]);
     throw redirect(`/login?${searchParams}`);
   }
-  return id;
+  return {
+    id,
+    email: session.get('email'),
+    firstName: session.get('firstName'),
+    lastName: session.get('lastName'),
+  };
 }

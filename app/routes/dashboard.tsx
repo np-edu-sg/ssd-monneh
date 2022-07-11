@@ -20,36 +20,39 @@ import {ChevronRight, MoonStars, Sun} from "tabler-icons-react";
 import type {LoaderFunction} from "@remix-run/node";
 import {json} from "@remix-run/node";
 
-import {db} from "~/utils/db.server";
-import {requireUserId} from "~/utils/session.server";
 import type {Organization} from '@prisma/client'
 
+import {db} from "~/utils/db.server";
+import type {UserSessionData} from "~/utils/session.server";
+import {requireUser} from "~/utils/session.server";
+
 interface LoaderData {
-  organizations: Organization[]
+  organizations: Organization[],
+  user: UserSessionData
 }
 
 export const loader: LoaderFunction = async ({request}) => {
-  const id = await requireUserId(request)
+  const user = await requireUser(request)
   const organizations = await db.organization.findMany({
     where: {
       users: {
         every: {
-          id
+          id: user.id
         }
       }
     }
   })
-  return json<LoaderData>({organizations})
+  return json<LoaderData>({organizations, user})
 }
 
 export default function DashboardLayout() {
-  const navigate = useNavigate()
   const theme = useMantineTheme()
+  const {colorScheme, toggleColorScheme} = useMantineColorScheme();
 
+  const navigate = useNavigate()
   const data = useLoaderData<LoaderData>()
 
   const [opened, setOpened] = useState(false);
-  const {colorScheme, toggleColorScheme} = useMantineColorScheme();
 
   const dark = colorScheme === 'dark'
 
@@ -145,8 +148,10 @@ export default function DashboardLayout() {
           <Group style={{flex: 1}} align={'flex-end'}>
             <Group style={{width: '100%'}} align={'center'} position={'apart'}>
               <Group>
-                <Avatar size={30} color={'violet'}>Q</Avatar>
-                Qin Guan
+                <Avatar size={30} color={'violet'}>{data.user.firstName[0]}</Avatar>
+                <Text>
+                  {data.user.firstName} {data.user.lastName}
+                </Text>
               </Group>
               <ChevronRight></ChevronRight>
             </Group>

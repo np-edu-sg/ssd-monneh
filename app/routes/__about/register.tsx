@@ -44,7 +44,7 @@ export const action: ActionFunction = async ({request}) => {
     }, {status: 409})
   }
 
-  return createUserSession(user.id, '/dashboard')
+  return createUserSession(user, '/dashboard')
 }
 
 export default function RegisterPage() {
