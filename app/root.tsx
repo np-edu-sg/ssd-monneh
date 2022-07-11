@@ -33,7 +33,7 @@ export const links: LinksFunction = () => ([
 ])
 
 export default function App() {
-  const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('dark');
   const toggleColorScheme = (value?: ColorScheme) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
@@ -46,7 +46,7 @@ export default function App() {
     <body>
 
     <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-      <MantineProvider theme={{fontFamily: 'Fira Sans'}}>
+      <MantineProvider theme={{fontFamily: 'Fira Sans', colorScheme}} withGlobalStyles withNormalizeCSS>
         <Outlet/>
       </MantineProvider>
     </ColorSchemeProvider>
