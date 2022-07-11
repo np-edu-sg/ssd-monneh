@@ -1,4 +1,4 @@
-import {Box, Button, Center, PasswordInput, Text, TextInput} from "@mantine/core";
+import {Button, Center, PasswordInput, Text, TextInput} from "@mantine/core";
 import type {ActionFunction} from "@remix-run/node";
 import {json} from "@remix-run/node";
 import {Form, useActionData, useSubmit} from "@remix-run/react";

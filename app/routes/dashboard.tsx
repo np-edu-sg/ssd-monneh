@@ -16,14 +16,13 @@ import {
   useMantineTheme
 } from "@mantine/core";
 import {Outlet, useLoaderData, useNavigate} from "@remix-run/react";
-import {MoonStars, Sun} from "tabler-icons-react";
+import {ChevronRight, MoonStars, Sun} from "tabler-icons-react";
 import type {LoaderFunction} from "@remix-run/node";
 import {json} from "@remix-run/node";
 
 import {db} from "~/utils/db.server";
 import {requireUserId} from "~/utils/session.server";
 import type {Organization} from '@prisma/client'
-import {ChevronRight} from "tabler-icons-react";
 
 interface LoaderData {
   organizations: Organization[]
@@ -112,7 +111,8 @@ export default function DashboardLayout() {
         </Header>
       }
       navbar={
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}} style={{display: 'flex', flexDirection: 'column'}}>
+        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}
+                style={{display: 'flex', flexDirection: 'column'}}>
           <Text weight={600}>Your organizations</Text>
           <br/>
           {data.organizations.length === 0 ? (
