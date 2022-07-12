@@ -1,17 +1,17 @@
-import {useState} from "react";
-import type {LinksFunction, MetaFunction} from "@remix-run/node";
-import type {ColorScheme} from "@mantine/core";
-import {ColorSchemeProvider, MantineProvider} from "@mantine/core";
-import {Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration} from "@remix-run/react";
+import { useState } from 'react'
+import type { LinksFunction, MetaFunction } from '@remix-run/node'
+import type { ColorScheme } from '@mantine/core'
+import { ColorSchemeProvider, MantineProvider } from '@mantine/core'
+import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 
+import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import stylesheetUrl from './styles.css'
-import {useHotkeys, useLocalStorage} from "@mantine/hooks";
 
 export const meta: MetaFunction = () => ({
-  charset: "utf-8",
-  title: "Monneh",
-  viewport: "width=device-width,initial-scale=1",
-});
+  charset: 'utf-8',
+  title: 'Monneh',
+  viewport: 'width=device-width,initial-scale=1',
+})
 
 export const links: LinksFunction = () => ([
   {
@@ -21,7 +21,7 @@ export const links: LinksFunction = () => ([
   {
     rel: 'preconnect',
     href: 'https://fonts.gstatic.com',
-    crossOrigin: "anonymous"
+    crossOrigin: 'anonymous',
   },
   {
     rel: 'stylesheet',
@@ -29,8 +29,8 @@ export const links: LinksFunction = () => ([
   },
   {
     rel: 'stylesheet',
-    href: stylesheetUrl
-  }
+    href: stylesheetUrl,
+  },
 ])
 
 export default function App() {
@@ -38,12 +38,12 @@ export default function App() {
     key: 'mantine-color-scheme',
     defaultValue: 'dark',
     getInitialValueInEffect: true,
-  });
+  })
 
   const toggleColorScheme = (value?: ColorScheme) =>
-    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'))
 
-  useHotkeys([['mod+J', () => toggleColorScheme()]]);
+  useHotkeys([['mod+J', () => toggleColorScheme()]])
 
   return (
     <html lang="en">
@@ -54,7 +54,7 @@ export default function App() {
     <body>
 
     <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-      <MantineProvider theme={{fontFamily: 'Fira Sans', colorScheme}} withGlobalStyles withNormalizeCSS>
+      <MantineProvider theme={{ fontFamily: 'Fira Sans', colorScheme }} withGlobalStyles withNormalizeCSS>
         <Outlet/>
       </MantineProvider>
     </ColorSchemeProvider>
@@ -64,5 +64,5 @@ export default function App() {
     <LiveReload/>
     </body>
     </html>
-  );
+  )
 }

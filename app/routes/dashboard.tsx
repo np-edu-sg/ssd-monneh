@@ -1,8 +1,7 @@
-import {useMemo, useState} from "react";
+import { useMemo, useState } from 'react'
 import {
   ActionIcon,
   AppShell,
-  Aside,
   Avatar,
   Burger,
   Button,
@@ -13,58 +12,58 @@ import {
   Text,
   UnstyledButton,
   useMantineColorScheme,
-  useMantineTheme
-} from "@mantine/core";
-import {NavLink, Outlet, useLoaderData, useNavigate, useParams} from "@remix-run/react";
-import {MoonStars, Sun} from "tabler-icons-react";
-import type {LoaderFunction} from "@remix-run/node";
-import {json} from "@remix-run/node";
+  useMantineTheme,
+} from '@mantine/core'
+import { NavLink, Outlet, useLoaderData, useNavigate, useParams } from '@remix-run/react'
+import { MoonStars, Sun } from 'tabler-icons-react'
+import type { LoaderFunction } from '@remix-run/node'
+import { json } from '@remix-run/node'
 
-import type {Organization} from '@prisma/client'
+import type { Organization } from '@prisma/client'
 
-import {db} from "~/utils/db.server";
-import type {UserSessionData} from "~/utils/session.server";
-import {requireUser} from "~/utils/session.server";
+import { db } from '~/utils/db.server'
+import type { UserSessionData } from '~/utils/session.server'
+import { requireUser } from '~/utils/session.server'
 
 interface LoaderData {
-  organizations: Organization[],
+  organizations: Organization[]
   user: UserSessionData
 }
 
-export const loader: LoaderFunction = async ({request}) => {
+export const loader: LoaderFunction = async ({ request }) => {
   const user = await requireUser(request)
   const organizations = await db.organization.findMany({
     where: {
       users: {
         every: {
-          id: user.id
-        }
-      }
-    }
+          id: user.id,
+        },
+      },
+    },
   })
-  return json<LoaderData>({organizations, user})
+  return json<LoaderData>({ organizations, user })
 }
 
 export default function DashboardLayout() {
   const theme = useMantineTheme()
-  const {colorScheme, toggleColorScheme} = useMantineColorScheme();
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme()
 
   const params = useParams()
   const navigate = useNavigate()
   const data = useLoaderData<LoaderData>()
 
-  const [opened, setOpened] = useState(false);
+  const [opened, setOpened] = useState(false)
 
   const currentOrganizationId = useMemo(() => {
-    if (!params.organizationId) return
+    if (!params.organizationId)
+      return
     return parseInt(params.organizationId, 10)
   }, [params])
 
   const dark = colorScheme === 'dark'
 
-  const toDashboard = () => navigate('/dashboard', {replace: true})
+  const toDashboard = () => navigate('/dashboard', { replace: true })
   const toggleNavbar = () => setOpened(o => !o)
-
 
   return (
     <AppShell
@@ -76,10 +75,10 @@ export default function DashboardLayout() {
         root: {
           height: '100vh',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
         },
         body: {
-          flex: 1
+          flex: 1,
         },
         main: {
           background: dark ? theme.colors.dark[8] : theme.colors.gray[0],
@@ -92,9 +91,9 @@ export default function DashboardLayout() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
           }}>
-          <MediaQuery largerThan="sm" styles={{display: 'none'}}>
+          <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
             <Burger
               title={'Menu'}
               opened={opened}
@@ -105,8 +104,8 @@ export default function DashboardLayout() {
             />
           </MediaQuery>
 
-          <Text weight={600} size={'lg'} onClick={toDashboard} style={{cursor: 'pointer'}}>
-            Monneh <span style={{fontWeight: 400}}>Dashboard</span>
+          <Text weight={600} size={'lg'} onClick={toDashboard} style={{ cursor: 'pointer' }}>
+            Monneh <span style={{ fontWeight: 400 }}>Dashboard</span>
           </Text>
 
           <ActionIcon
@@ -120,62 +119,65 @@ export default function DashboardLayout() {
         </Header>
       }
       navbar={
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}>
+        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 200, lg: 300 }}>
           <Text weight={600}>My organizations</Text>
           <br/>
-          {data.organizations.length === 0 ? (
-            <>
-              <Text>Nothing here... create one!</Text>
-              <br/>
-            </>
-          ) : (
-            <Group direction={'column'} position={'apart'}>
-              {data.organizations.map((organization, idx) => (
-                <UnstyledButton
-                  key={idx}
-                  component={NavLink}
-                  to={`/dashboard/organizations/${organization.id}`}
+          {data.organizations.length === 0
+            ? (
+              <>
+                <Text>Nothing here... create one!</Text>
+                <br/>
+              </>
+              )
+            : (
+              <Group direction={'column'} position={'apart'}>
+                {data.organizations.map((organization, idx) => (
+                  <UnstyledButton
+                    key={idx}
+                    component={NavLink}
+                    to={`/dashboard/organizations/${organization.id}`}
 
-                  style={{
-                    width: '100%',
-                  }}
-                  onClick={toggleNavbar}
-                >
-                  <Group grow={false} noWrap>
-                    <Avatar
-                      size={30}
-                      color={currentOrganizationId === organization.id ? 'violet' : 'gray'}
-                    >
-                      {organization.name[0]}
-                    </Avatar>
-                    <Text
-                      component={'span'}
-                      color={currentOrganizationId === organization.id ? 'violet' : 'gray'}
-                      style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {organization.name}
-                    </Text>
-                  </Group>
-                </UnstyledButton>
-              ))}
-            </Group>
-          )}
+                    style={{
+                      width: '100%',
+                    }}
+                    onClick={toggleNavbar}
+                  >
+                    <Group grow={false} noWrap>
+                      <Avatar
+                        size={30}
+                        color={currentOrganizationId === organization.id ? 'violet' : 'gray'}
+                      >
+                        {organization.name[0]}
+                      </Avatar>
+                      <Text
+                        component={'span'}
+                        color={currentOrganizationId === organization.id ? 'violet' : 'gray'}
+                        style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {organization.name}
+                      </Text>
+                    </Group>
+                  </UnstyledButton>
+                ))}
+              </Group>
+              )}
           <br/>
-          <Button component={NavLink} to={'/dashboard/organizations/new'} variant={'subtle'} onClick={toggleNavbar}>New +</Button>
+          <Button component={NavLink} to={'/dashboard/organizations/new'} variant={'subtle'} onClick={toggleNavbar}>New
+            +</Button>
 
-          <Group style={{flex: 1}} align={'flex-end'}>
+          <Group style={{ flex: 1 }} align={'flex-end'}>
             <UnstyledButton
               component={NavLink}
               to={'/dashboard/profile'}
-              style={{width: '100%'}}
+              style={{ width: '100%' }}
             >
               <Group
                 noWrap
-                style={{width: '100%', cursor: 'pointer'}}
+                style={{ width: '100%', cursor: 'pointer' }}
                 align={'center'}
               >
                 <Avatar size={30} color={'violet'}>{data.user.firstName[0]}</Avatar>
@@ -184,7 +186,7 @@ export default function DashboardLayout() {
                   style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {data.user.firstName} {data.user.lastName}
@@ -197,5 +199,5 @@ export default function DashboardLayout() {
     >
       <Outlet/>
     </AppShell>
-  );
+  )
 }

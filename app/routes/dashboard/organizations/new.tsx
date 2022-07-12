@@ -1,7 +1,7 @@
-import {Button, Paper, SimpleGrid, Text, TextInput, useMantineTheme} from "@mantine/core";
-import {Form, useActionData, useSubmit, useTransition} from "@remix-run/react";
-import {useForm} from "@mantine/form";
-import type {LoaderFunction} from "@remix-run/node";
+import { Button, Paper, SimpleGrid, Text, TextInput, useMantineTheme } from '@mantine/core'
+import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
+import { useForm } from '@mantine/form'
+import type { LoaderFunction } from '@remix-run/node'
 
 export const loader: LoaderFunction = () => {
   return {}
@@ -18,18 +18,18 @@ export default function NewOrganization() {
     },
 
     validate: {
-      name: (value) => value.length > 0 ? null : 'Name is required'
-    }
+      name: value => value.length > 0 ? null : 'Name is required',
+    },
   })
 
   return (
     <div>
-      <Text component={'h1'} size={'xl'} style={{marginTop: 0}}>
+      <Text component={'h1'} size={'xl'} style={{ marginTop: 0 }}>
         Create your organization!
       </Text>
 
       <Form onSubmit={form.onSubmit(async (values) => {
-        submit(values, {method: 'post'})
+        submit(values, { method: 'post' })
       })}>
         <SimpleGrid spacing={'md'}>
           <Paper shadow="xs" p="xl" withBorder>
@@ -97,7 +97,7 @@ export default function NewOrganization() {
             <Button
               type={'submit'}
               variant={'gradient'}
-              gradient={{from: 'violet', to: 'grape'}}
+              gradient={{ from: 'violet', to: 'grape' }}
               loading={transition.state === 'submitting'}
             >
               Create organization!

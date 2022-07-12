@@ -1,11 +1,11 @@
-import {Button, Center, PasswordInput, Text, TextInput} from "@mantine/core";
-import type {ActionFunction} from "@remix-run/node";
-import {json} from "@remix-run/node";
-import {Form, useActionData, useSubmit, useTransition} from "@remix-run/react";
-import {useForm} from "@mantine/form";
+import { Button, Center, PasswordInput, Text, TextInput } from '@mantine/core'
+import type { ActionFunction } from '@remix-run/node'
+import { json } from '@remix-run/node'
+import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
+import { useForm } from '@mantine/form'
 
 import * as z from 'zod'
-import {createUserSession, register} from "~/utils/session.server";
+import { createUserSession, register } from '~/utils/session.server'
 
 const bodySchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -18,7 +18,7 @@ interface ActionData {
   errors?: Record<string, string>
 }
 
-export const action: ActionFunction = async ({request}) => {
+export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData()
   const result = await bodySchema.safeParseAsync({
     firstName: formData.get('firstName'),
@@ -31,17 +31,17 @@ export const action: ActionFunction = async ({request}) => {
       errors: result.error.issues.reduce<Record<string, string>>((a, v) => {
         a[v.path.toString()] = v.message
         return a
-      }, {})
-    }, {status: 400})
+      }, {}),
+    }, { status: 400 })
   }
 
   const user = await register(result.data)
   if (!user) {
     return json<ActionData>({
       errors: {
-        email: 'User already exists with this email'
-      }
-    }, {status: 409})
+        email: 'User already exists with this email',
+      },
+    }, { status: 409 })
   }
 
   return createUserSession(user, '/dashboard')
@@ -57,39 +57,39 @@ export default function RegisterPage() {
       firstName: '',
       lastName: '',
       email: '',
-      password: ''
+      password: '',
     },
 
     validate: {
-      firstName: (value) => value.length > 0 ? null : 'First name is required',
-      lastName: (value) => value.length > 0 ? null : 'Last name is required',
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-      password: (value) => value.length > 0 ? null : 'Password is required',
+      firstName: value => value.length > 0 ? null : 'First name is required',
+      lastName: value => value.length > 0 ? null : 'Last name is required',
+      email: value => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
+      password: value => value.length > 0 ? null : 'Password is required',
     },
-  });
+  })
 
   return (
-    <Center component={'section'} style={{height: '100%'}}>
+    <Center component={'section'} style={{ height: '100%' }}>
       <Center sx={theme => ({
         padding: theme.spacing.lg,
         flexDirection: 'column',
         marginBottom: '10%',
         width: '100%',
         [theme.fn.largerThan('xs')]: {
-          width: '45%'
+          width: '45%',
         },
         [theme.fn.largerThan('md')]: {
-          width: '35%'
+          width: '35%',
         },
         [theme.fn.largerThan('lg')]: {
-          width: '30%'
-        }
+          width: '30%',
+        },
       })}>
-        <Text component={'h1'} size={'xl'} style={{marginTop: 0}}>
+        <Text component={'h1'} size={'xl'} style={{ marginTop: 0 }}>
           Register
         </Text>
         <Form onSubmit={form.onSubmit((values) => {
-          submit(values, {method: 'post'})
+          submit(values, { method: 'post' })
         })}>
           <TextInput
             size={'md'}

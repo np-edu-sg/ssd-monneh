@@ -28,6 +28,7 @@
     "zod": "^3.17.3"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^0.25.2",
     "@remix-run/dev": "^1.6.4",
     "@remix-run/eslint-config": "^1.6.4",
     "@remix-run/serve": "^1.6.4",
