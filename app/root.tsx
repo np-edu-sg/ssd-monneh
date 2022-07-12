@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { LinksFunction, MetaFunction } from '@remix-run/node'
 import type { ColorScheme } from '@mantine/core'
 import { ColorSchemeProvider, MantineProvider } from '@mantine/core'

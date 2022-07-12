@@ -36,13 +36,13 @@ export default function AboutLayout() {
           <Center sx={theme => ({ gap: theme.spacing.sm, display: 'flex' })}>
             {data.isAuthenticated
               ? (
-              <Button component={NavLink} to={'dashboard'} variant={'outline'}>Dashboard</Button>
+                <Button component={NavLink} to={'dashboard'} variant={'outline'}>Dashboard</Button>
                 )
               : (
-              <>
-                <Button component={NavLink} to={'login'} variant={'outline'}>Login</Button>
-                <Button component={NavLink} to={'register'} variant={'gradient'}>Register</Button>
-              </>
+                <>
+                  <Button component={NavLink} to={'login'} variant={'outline'}>Login</Button>
+                  <Button component={NavLink} to={'register'} variant={'gradient'}>Register</Button>
+                </>
                 )}
           </Center>
         </Header>
