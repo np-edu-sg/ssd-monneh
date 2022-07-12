@@ -119,7 +119,6 @@ export async function requireUser(
 ): Promise<UserSessionData> {
   const session = await getUserSession(request);
   const id = session.get("id");
-  console.log(id)
   if (!id || typeof id !== "number") {
     const searchParams = new URLSearchParams([
       ["redirectTo", redirectTo],

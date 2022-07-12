@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import {
   ActionIcon,
   AppShell,
@@ -15,8 +15,8 @@ import {
   useMantineColorScheme,
   useMantineTheme
 } from "@mantine/core";
-import {Outlet, useLoaderData, useNavigate} from "@remix-run/react";
-import {ChevronRight, MoonStars, Sun} from "tabler-icons-react";
+import {NavLink, Outlet, useLoaderData, useNavigate, useParams} from "@remix-run/react";
+import {MoonStars, Sun} from "tabler-icons-react";
 import type {LoaderFunction} from "@remix-run/node";
 import {json} from "@remix-run/node";
 
@@ -49,16 +49,22 @@ export default function DashboardLayout() {
   const theme = useMantineTheme()
   const {colorScheme, toggleColorScheme} = useMantineColorScheme();
 
+  const params = useParams()
   const navigate = useNavigate()
   const data = useLoaderData<LoaderData>()
 
   const [opened, setOpened] = useState(false);
 
+  const currentOrganizationId = useMemo(() => {
+    if (!params.organizationId) return
+    return parseInt(params.organizationId, 10)
+  }, [params])
+
   const dark = colorScheme === 'dark'
 
-  function toDashboard() {
-    navigate('/dashboard', {replace: true})
-  }
+  const toDashboard = () => navigate('/dashboard', {replace: true})
+  const toggleNavbar = () => setOpened(o => !o)
+
 
   return (
     <AppShell
@@ -92,7 +98,7 @@ export default function DashboardLayout() {
             <Burger
               title={'Menu'}
               opened={opened}
-              onClick={() => setOpened((o) => !o)}
+              onClick={toggleNavbar}
               size="sm"
               color={theme.colors.gray[6]}
               mr="xl"
@@ -122,16 +128,32 @@ export default function DashboardLayout() {
           ) : (
             <Group direction={'column'} position={'apart'}>
               {data.organizations.map((organization, idx) => (
-                <UnstyledButton onClick={() => console.log('try focusing button with tab')} key={idx} style={{
-                  width: '100%'
-                }}>
+                <UnstyledButton
+                  key={idx}
+                  component={NavLink}
+                  to={`/dashboard/organizations/${organization.id}`}
+
+                  style={{
+                    width: '100%',
+                  }}
+                  onClick={toggleNavbar}
+                >
                   <Group grow={false} noWrap>
-                    <Avatar size={30} color="blue">{organization.name[0]}</Avatar>
-                    <Text component={'span'} style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <Avatar
+                      size={30}
+                      color={currentOrganizationId === organization.id ? 'violet' : 'gray'}
+                    >
+                      {organization.name[0]}
+                    </Avatar>
+                    <Text
+                      component={'span'}
+                      color={currentOrganizationId === organization.id ? 'violet' : 'gray'}
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       {organization.name}
                     </Text>
                   </Group>
@@ -145,16 +167,29 @@ export default function DashboardLayout() {
           </div>
 
           <Group style={{flex: 1}} align={'flex-end'}>
-            <Group style={{width: '100%', cursor: 'pointer'}} align={'center'} position={'apart'}
-                   onClick={() => navigate('/dashboard/profile')}>
-              <Group>
+            <UnstyledButton
+              component={NavLink}
+              to={'/dashboard/profile'}
+              style={{width: '100%'}}
+            >
+              <Group
+                noWrap
+                style={{width: '100%', cursor: 'pointer'}}
+                align={'center'}
+              >
                 <Avatar size={30} color={'violet'}>{data.user.firstName[0]}</Avatar>
-                <Text>
+                <Text
+                  component={'span'}
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {data.user.firstName} {data.user.lastName}
                 </Text>
               </Group>
-              <ChevronRight></ChevronRight>
-            </Group>
+            </UnstyledButton>
           </Group>
         </Navbar>
       }

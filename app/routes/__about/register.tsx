@@ -1,7 +1,7 @@
 import {Button, Center, PasswordInput, Text, TextInput} from "@mantine/core";
 import type {ActionFunction} from "@remix-run/node";
 import {json} from "@remix-run/node";
-import {Form, useActionData, useSubmit} from "@remix-run/react";
+import {Form, useActionData, useSubmit, useTransition} from "@remix-run/react";
 import {useForm} from "@mantine/form";
 
 import * as z from 'zod'
@@ -49,6 +49,7 @@ export const action: ActionFunction = async ({request}) => {
 
 export default function RegisterPage() {
   const submit = useSubmit()
+  const transition = useTransition()
   const data = useActionData<ActionData>()
 
   const form = useForm({
@@ -126,7 +127,7 @@ export default function RegisterPage() {
 
           <br/>
 
-          <Button type={'submit'} fullWidth>Register</Button>
+          <Button type={'submit'} fullWidth loading={transition.state === 'submitting'}>Register</Button>
         </Form>
       </Center>
     </Center>
