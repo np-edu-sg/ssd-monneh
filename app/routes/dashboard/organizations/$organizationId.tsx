@@ -1,9 +1,9 @@
 import type { ThrownResponse } from '@remix-run/react'
-import { useCatch, useParams } from '@remix-run/react'
+import { useCatch, useLoaderData, useParams } from '@remix-run/react'
 import type { LoaderFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import type { Organization } from '@prisma/client'
 import { Center, Text } from '@mantine/core'
+import type { Organization } from '@prisma/client'
 import { db } from '~/utils/db.server'
 
 interface LoaderData {
@@ -33,9 +33,10 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export default function OrganizationPage() {
   const { organizationId } = useParams()
+  const { organization } = useLoaderData<LoaderData>()
 
   return (
-    <div>Organization {organizationId}</div>
+    <div>Organization {organizationId} {JSON.stringify(organization)}</div>
   )
 }
 
