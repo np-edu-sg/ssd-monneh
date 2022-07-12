@@ -4,8 +4,8 @@ import {createCookieSessionStorage, redirect} from "@remix-run/node";
 import {db} from "./db.server";
 
 interface LoginForm {
-  email: string;
-  password: string;
+  email: string
+  password: string
 }
 
 interface RegisterForm {
