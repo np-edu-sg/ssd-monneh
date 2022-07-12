@@ -31,7 +31,6 @@ export default function NewOrganization() {
         <Accordion
           initialItem={0}
           iconPosition={'right'}
-          multiple
           styles={{
             item: {
               marginBottom: theme.spacing.md,
