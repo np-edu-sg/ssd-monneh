@@ -121,10 +121,13 @@ export default function DashboardLayout() {
       }
       navbar={
         <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{sm: 200, lg: 300}}>
-          <Text weight={600}>Your organizations</Text>
+          <Text weight={600}>My organizations</Text>
           <br/>
           {data.organizations.length === 0 ? (
-            <Text>Nothing here... create one!</Text>
+            <>
+              <Text>Nothing here... create one!</Text>
+              <br/>
+            </>
           ) : (
             <Group direction={'column'} position={'apart'}>
               {data.organizations.map((organization, idx) => (
@@ -162,7 +165,7 @@ export default function DashboardLayout() {
             </Group>
           )}
           <br/>
-          <Button component={NavLink} to={'/dashboard/organizations/new'} variant={'subtle'}>New +</Button>
+          <Button component={NavLink} to={'/dashboard/organizations/new'} variant={'subtle'} onClick={toggleNavbar}>New +</Button>
 
           <Group style={{flex: 1}} align={'flex-end'}>
             <UnstyledButton
