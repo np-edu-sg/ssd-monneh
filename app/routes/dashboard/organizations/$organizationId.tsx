@@ -44,7 +44,9 @@ export function CatchBoundary() {
   const error = useCatch<ThrownResponses>()
 
   return (
-    <Center sx={theme => ({
+    <Center
+      component={'section'}
+      sx={theme => ({
       backgroundColor: theme.colorScheme === 'dark' ? theme.fn.rgba(theme.colors.red[9], 0.50) : theme.colors.red[4],
       height: '100%'
     })}>

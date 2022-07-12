@@ -162,9 +162,7 @@ export default function DashboardLayout() {
             </Group>
           )}
           <br/>
-          <div>
-            <Button variant={'outline'}>New +</Button>
-          </div>
+          <Button component={NavLink} to={'/dashboard/organizations/new'} variant={'subtle'}>New +</Button>
 
           <Group style={{flex: 1}} align={'flex-end'}>
             <UnstyledButton
@@ -192,13 +190,6 @@ export default function DashboardLayout() {
             </UnstyledButton>
           </Group>
         </Navbar>
-      }
-      aside={
-        <MediaQuery smallerThan="sm" styles={{display: 'none'}}>
-          <Aside p="md" hiddenBreakpoint="sm" width={{sm: 200, lg: 300}}>
-            <Text>Application sidebar</Text>
-          </Aside>
-        </MediaQuery>
       }
     >
       <Outlet/>
