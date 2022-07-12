@@ -5,6 +5,7 @@ import {ColorSchemeProvider, MantineProvider} from "@mantine/core";
 import {Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration} from "@remix-run/react";
 
 import stylesheetUrl from './styles.css'
+import {useHotkeys, useLocalStorage} from "@mantine/hooks";
 
 export const meta: MetaFunction = () => ({
   charset: "utf-8",
@@ -33,9 +34,16 @@ export const links: LinksFunction = () => ([
 ])
 
 export default function App() {
-  const [colorScheme, setColorScheme] = useState<ColorScheme>('dark');
+  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
+    key: 'mantine-color-scheme',
+    defaultValue: 'dark',
+    getInitialValueInEffect: true,
+  });
+
   const toggleColorScheme = (value?: ColorScheme) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+
+  useHotkeys([['mod+J', () => toggleColorScheme()]]);
 
   return (
     <html lang="en">
