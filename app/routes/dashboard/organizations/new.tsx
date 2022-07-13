@@ -86,7 +86,7 @@ export default function NewOrganization() {
 
                     <Paper shadow={'xs'} p={'xl'} withBorder>
                         <Text weight={600} size={'lg'}>
-                            1. Organization
+                            3. Members
                         </Text>
 
                         <br />

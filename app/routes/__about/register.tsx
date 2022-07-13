@@ -8,6 +8,7 @@ import * as z from 'zod'
 import { createUserSession, register } from '~/utils/session.server'
 
 const bodySchema = z.object({
+    username: z.string().min(1, 'Username is required'),
     firstName: z.string().min(1, 'First name is required'),
     lastName: z.string().min(1, 'Last name is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email'),
@@ -20,12 +21,14 @@ interface ActionData {
 
 export const action: ActionFunction = async ({ request }) => {
     const formData = await request.formData()
-    const result = await bodySchema.safeParseAsync({
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        email: formData.get('email'),
-        password: formData.get('password'),
+    const object: Record<string, string> = {}
+    formData.forEach((value, key) => {
+        if (typeof value === 'string') {
+            object[key] = value
+        }
     })
+
+    const result = await bodySchema.safeParseAsync(object)
     if (!result.success) {
         return json<ActionData>(
             {
@@ -46,7 +49,7 @@ export const action: ActionFunction = async ({ request }) => {
         return json<ActionData>(
             {
                 errors: {
-                    email: 'User already exists with this email',
+                    username: 'User already exists with this username',
                 },
             },
             { status: 409 }
@@ -63,6 +66,7 @@ export default function RegisterPage() {
 
     const form = useForm({
         initialValues: {
+            username: '',
             firstName: '',
             lastName: '',
             email: '',
@@ -70,6 +74,8 @@ export default function RegisterPage() {
         },
 
         validate: {
+            username: (value) =>
+                value.length > 0 ? null : 'Username is required',
             firstName: (value) =>
                 value.length > 0 ? null : 'First name is required',
             lastName: (value) =>
@@ -110,6 +116,15 @@ export default function RegisterPage() {
                 >
                     <TextInput
                         size={'md'}
+                        placeholder={'Username'}
+                        error={data?.errors?.username}
+                        {...form.getInputProps('username')}
+                    />
+
+                    <br />
+
+                    <TextInput
+                        size={'md'}
                         placeholder={'First name'}
                         error={data?.errors?.firstName}
                         {...form.getInputProps('firstName')}
@@ -128,6 +143,7 @@ export default function RegisterPage() {
 
                     <TextInput
                         size={'md'}
+                        type={'email'}
                         placeholder={'Email'}
                         error={data?.errors?.email}
                         {...form.getInputProps('email')}

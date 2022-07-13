@@ -43,7 +43,7 @@ export const loader: LoaderFunction = async ({ request }) => {
         where: {
             users: {
                 every: {
-                    id: user.id,
+                    username: user.username,
                 },
             },
         },
@@ -143,10 +143,7 @@ export default function DashboardLayout() {
                     <Text weight={600}>My organizations</Text>
                     <br />
                     {data.organizations.length === 0 ? (
-                        <>
-                            <Text>Nothing here... create one!</Text>
-                            <br />
-                        </>
+                        <Text>Nothing here... create one!</Text>
                     ) : (
                         <Stack justify={'space-between'}>
                             {data.organizations.map((organization, idx) => (

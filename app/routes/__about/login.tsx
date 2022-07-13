@@ -11,16 +11,18 @@ interface ActionData {
     errors?: Record<string, string>
 }
 
-const bodySchema = z.object({
-    email: z.string().min(1, 'Email is required').email('Invalid email'),
-    password: z.string().min(1, 'Password is required'),
-})
+const bodySchema = z
+    .object({
+        username: z.string().min(1, 'Username is required'),
+        password: z.string().min(1, 'Password is required'),
+    })
+    .strict()
 
 export const action: ActionFunction = async ({ request }) => {
     const formData = await request.formData()
 
     const result = await bodySchema.safeParseAsync({
-        email: formData.get('email'),
+        username: formData.get('username'),
         password: formData.get('password'),
     })
 
@@ -39,15 +41,12 @@ export const action: ActionFunction = async ({ request }) => {
         )
     }
 
-    const user = await login({
-        email: result.data.email,
-        password: result.data.password,
-    })
+    const user = await login(result.data)
     if (!user) {
         return json<ActionData>(
             {
                 errors: {
-                    password: 'Invalid email or password',
+                    password: 'Invalid username or password',
                 },
             },
             { status: 403 }
@@ -64,13 +63,13 @@ export default function LoginPage() {
 
     const form = useForm({
         initialValues: {
-            email: '',
+            username: '',
             password: '',
         },
 
         validate: {
-            email: (value) =>
-                /^\S+@\S+$/.test(value) ? null : 'Invalid email',
+            username: (value) =>
+                value.length > 0 ? null : 'Username is required',
             password: (value) =>
                 value.length > 0 ? null : 'Password is required',
         },
@@ -106,10 +105,9 @@ export default function LoginPage() {
                 >
                     <TextInput
                         size={'md'}
-                        type={'email'}
-                        placeholder={'Email Address'}
+                        placeholder={'Username'}
                         error={data?.errors?.email}
-                        {...form.getInputProps('email')}
+                        {...form.getInputProps('username')}
                     />
 
                     <br />

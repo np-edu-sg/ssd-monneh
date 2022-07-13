@@ -32,7 +32,7 @@ model Role {
 }
 
 model User {
-    id                   Int            @id @default(autoincrement())
+    username             String         @id
     email                String
     firstName            String
     lastName             String
@@ -60,10 +60,10 @@ model Transaction {
     entryDateTime    DateTime
     spendDateTime    DateTime
     sensitivity      Int
-    creator          User     @relation("CreatedTransactions", fields: [creatorId], references: [id])
-    creatorId        Int
-    reviewer         User?    @relation("ReviewedTransactions", fields: [reviewerId], references: [id])
-    reviewerId       Int?
+    creator          User     @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
+    creatorUsername  String
+    reviewer         User?    @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
+    reviewerUsername String?
     transactionValue Decimal
     blockedFor       Role[]
 }
