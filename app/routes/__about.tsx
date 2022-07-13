@@ -23,11 +23,11 @@ export default function AboutLayout() {
 
     return (
         <AppShell
-            padding="md"
+            padding={'md'}
             header={
                 <Header
                     height={60}
-                    p="lg"
+                    p={'lg'}
                     style={{
                         display: 'flex',
                         alignItems: 'center',

@@ -15,7 +15,7 @@ export default function LandingPage() {
 
     return (
         <Box
-            component="section"
+            component={'section'}
             sx={(theme) => ({
                 [theme.fn.largerThan('sm')]: {
                     paddingLeft: '1rem',
@@ -27,12 +27,12 @@ export default function LandingPage() {
                 },
             })}
         >
-            <Text component="h1" className={classes.heading}>
+            <Text component={'h1'} className={classes.heading}>
                 Cash flow management
                 <br />
                 for
                 <Box
-                    component="span"
+                    component={'span'}
                     sx={(theme) => ({ color: theme.colors.violet[8] })}
                 >
                     {' '}
@@ -41,10 +41,10 @@ export default function LandingPage() {
             </Text>
 
             <Button
-                radius="md"
-                variant="gradient"
+                radius={'md'}
+                variant={'gradient'}
                 gradient={{ from: 'grape', to: 'violet' }}
-                size="lg"
+                size={'lg'}
             >
                 Get started
             </Button>

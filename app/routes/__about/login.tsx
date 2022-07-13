@@ -77,11 +77,11 @@ export default function LoginPage() {
     })
 
     return (
-        <Center component="section" style={{ height: '100%' }}>
+        <Center component={'section'} style={{ height: '100%' }}>
             <Center
                 inline
-                p="lg"
-                mb="10%"
+                p={'lg'}
+                mb={'10%'}
                 sx={(theme) => ({
                     width: '100%',
                     flexDirection: 'column',
@@ -96,7 +96,7 @@ export default function LoginPage() {
                     },
                 })}
             >
-                <Text component="h1" size="xl" style={{ marginTop: 0 }}>
+                <Text component={'h1'} size={'xl'} style={{ marginTop: 0 }}>
                     Login to Monneh
                 </Text>
                 <Form
@@ -105,9 +105,9 @@ export default function LoginPage() {
                     })}
                 >
                     <TextInput
-                        size="md"
-                        type="email"
-                        placeholder="Email Address"
+                        size={'md'}
+                        type={'email'}
+                        placeholder={'Email Address'}
                         error={data?.errors?.email}
                         {...form.getInputProps('email')}
                     />
@@ -115,8 +115,8 @@ export default function LoginPage() {
                     <br />
 
                     <PasswordInput
-                        size="md"
-                        placeholder="Password"
+                        size={'md'}
+                        placeholder={'Password'}
                         error={data?.errors?.password}
                         {...form.getInputProps('password')}
                     />
@@ -124,8 +124,8 @@ export default function LoginPage() {
                     <br />
 
                     <Button
-                        type="submit"
-                        color="violet"
+                        type={'submit'}
+                        color={'violet'}
                         fullWidth
                         loading={transition.state === 'submitting'}
                     >

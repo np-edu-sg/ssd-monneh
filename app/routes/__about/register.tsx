@@ -110,7 +110,7 @@ export default function RegisterPage() {
                 >
                     <TextInput
                         size={'md'}
-                        placeholder="First name"
+                        placeholder={'First name'}
                         error={data?.errors?.firstName}
                         {...form.getInputProps('firstName')}
                     />
@@ -119,7 +119,7 @@ export default function RegisterPage() {
 
                     <TextInput
                         size={'md'}
-                        placeholder="Last name"
+                        placeholder={'Last name'}
                         error={data?.errors?.lastName}
                         {...form.getInputProps('lastName')}
                     />
@@ -128,7 +128,7 @@ export default function RegisterPage() {
 
                     <TextInput
                         size={'md'}
-                        placeholder="Email"
+                        placeholder={'Email'}
                         error={data?.errors?.email}
                         {...form.getInputProps('email')}
                     />
@@ -137,7 +137,7 @@ export default function RegisterPage() {
 
                     <PasswordInput
                         size={'md'}
-                        placeholder="Password"
+                        placeholder={'Password'}
                         error={data?.errors?.password}
                         {...form.getInputProps('password')}
                     />

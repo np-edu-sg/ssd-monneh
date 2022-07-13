@@ -34,7 +34,7 @@ export default function NewOrganization() {
                 })}
             >
                 <SimpleGrid spacing={'md'}>
-                    <Paper shadow="xs" p="xl" withBorder>
+                    <Paper shadow={'xs'} p={'xl'} withBorder>
                         <Text weight={600} size={'lg'}>
                             1. Organization
                         </Text>
@@ -51,13 +51,13 @@ export default function NewOrganization() {
 
                         <TextInput
                             size={'md'}
-                            placeholder="Organization name"
+                            placeholder={'Organization name'}
                             error={data?.errors?.email}
                             {...form.getInputProps('name')}
                         />
                     </Paper>
 
-                    <Paper shadow="xs" p="xl" withBorder>
+                    <Paper shadow={'xs'} p={'xl'} withBorder>
                         <Text weight={600} size={'lg'}>
                             2. Roles
                         </Text>
@@ -78,13 +78,13 @@ export default function NewOrganization() {
 
                         <TextInput
                             size={'md'}
-                            placeholder="Organization name"
+                            placeholder={'Organization name'}
                             error={data?.errors?.email}
                             {...form.getInputProps('name')}
                         />
                     </Paper>
 
-                    <Paper shadow="xs" p="xl" withBorder>
+                    <Paper shadow={'xs'} p={'xl'} withBorder>
                         <Text weight={600} size={'lg'}>
                             1. Organization
                         </Text>
@@ -99,7 +99,7 @@ export default function NewOrganization() {
 
                         <TextInput
                             size={'md'}
-                            placeholder="Organization name"
+                            placeholder={'Organization name'}
                             error={data?.errors?.email}
                             {...form.getInputProps('name')}
                         />

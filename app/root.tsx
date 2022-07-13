@@ -52,7 +52,7 @@ export default function App() {
     useHotkeys([['mod+J', () => toggleColorScheme()]])
 
     return (
-        <html lang="en">
+        <html lang={'en'}>
             <head>
                 <Meta />
                 <Links />

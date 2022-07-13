@@ -74,9 +74,9 @@ export default function DashboardLayout() {
     return (
         <AppShell
             fixed
-            padding="md"
-            navbarOffsetBreakpoint="sm"
-            asideOffsetBreakpoint="sm"
+            padding={'md'}
+            navbarOffsetBreakpoint={'sm'}
+            asideOffsetBreakpoint={'sm'}
             styles={{
                 root: {
                     height: '100vh',
@@ -95,21 +95,21 @@ export default function DashboardLayout() {
             header={
                 <Header
                     height={60}
-                    p="lg"
+                    p={'lg'}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                     }}
                 >
-                    <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
+                    <MediaQuery largerThan={'sm'} styles={{ display: 'none' }}>
                         <Burger
                             title={'Menu'}
                             opened={opened}
                             onClick={toggleNavbar}
-                            size="sm"
+                            size={'sm'}
                             color={theme.colors.gray[6]}
-                            mr="xl"
+                            mr={'xl'}
                         />
                     </MediaQuery>
 
@@ -124,10 +124,10 @@ export default function DashboardLayout() {
                     </Text>
 
                     <ActionIcon
-                        variant="outline"
+                        variant={'outline'}
                         color={dark ? 'yellow' : 'blue'}
                         onClick={() => toggleColorScheme()}
-                        title="Toggle color scheme"
+                        title={'Toggle color scheme'}
                     >
                         {dark ? <Sun size={18} /> : <MoonStars size={18} />}
                     </ActionIcon>
@@ -135,8 +135,8 @@ export default function DashboardLayout() {
             }
             navbar={
                 <Navbar
-                    p="md"
-                    hiddenBreakpoint="sm"
+                    p={'md'}
+                    hiddenBreakpoint={'sm'}
                     hidden={!opened}
                     width={{ sm: 200, lg: 300 }}
                 >
