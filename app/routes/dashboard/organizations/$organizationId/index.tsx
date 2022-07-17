@@ -1,13 +1,16 @@
 import type { ThrownResponse } from '@remix-run/react'
-import { useCatch, useLoaderData, useParams } from '@remix-run/react'
+import { useCatch, useLoaderData } from '@remix-run/react'
 import type { LoaderFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
 import { Center, Text } from '@mantine/core'
-import type { Organization } from '@prisma/client'
 import { db } from '~/utils/db.server'
 
 interface LoaderData {
-    organization: Organization
+    organization: {
+        id: number
+        name: string
+        completedSetup: boolean
+    }
 }
 
 type OrganizationNotFoundError = ThrownResponse<404, string>
@@ -21,6 +24,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 
     const id = parseInt(params.organizationId)
     const organization = await db.organization.findUnique({
+        select: { id: true, name: true, completedSetup: true },
         where: {
             id,
         },
@@ -28,18 +32,16 @@ export const loader: LoaderFunction = async ({ params }) => {
     if (!organization)
         throw json('Organization does not exist', { status: 404 })
 
+    if (!organization.completedSetup)
+        return redirect(`/dashboard/organizations/${id}/setup`)
+
     return json({ organization })
 }
 
 export default function OrganizationPage() {
-    const { organizationId } = useParams()
     const { organization } = useLoaderData<LoaderData>()
 
-    return (
-        <div>
-            Organization {organizationId} {JSON.stringify(organization)}
-        </div>
-    )
+    return <div>{JSON.stringify(organization)}</div>
 }
 
 export function CatchBoundary() {

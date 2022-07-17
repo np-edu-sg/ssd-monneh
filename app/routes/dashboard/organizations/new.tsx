@@ -1,17 +1,56 @@
-import { Button, Paper, SimpleGrid, Text, TextInput } from '@mantine/core'
+import { Button, Stack, Text, TextInput } from '@mantine/core'
 import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
 import { useForm } from '@mantine/form'
-import type { LoaderFunction } from '@remix-run/node'
+import { db } from '~/utils/db.server'
+import type { ActionFunction } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
+import * as z from 'zod'
+import { getValidationErrorObject } from '~/utils/validation.server'
+import { requireUser } from '~/utils/session.server'
 
-export const loader: LoaderFunction = () => {
-    return {}
+interface ActionData {
+    errors?: Record<string, string>
+}
+
+const createOrganizationBodySchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+})
+
+export const action: ActionFunction = async ({ request }) => {
+    const { username } = await requireUser(request)
+
+    const formData = await request.formData()
+    const result = await createOrganizationBodySchema.safeParseAsync({
+        name: formData.get('name'),
+    })
+
+    if (!result.success) {
+        return json<ActionData>({
+            errors: getValidationErrorObject(result.error.issues),
+        })
+    }
+
+    const { id } = await db.organization.create({
+        data: {
+            name: result.data.name,
+            completedSetup: false,
+            users: {
+                connect: [
+                    {
+                        username,
+                    },
+                ],
+            },
+        },
+    })
+
+    return redirect(`/dashboard/organizations/${id}`)
 }
 
 export default function NewOrganization() {
     const submit = useSubmit()
-    const data = useActionData()
     const transition = useTransition()
-
+    const data = useActionData<ActionData>()
     const form = useForm({
         initialValues: {
             name: '',
@@ -24,8 +63,8 @@ export default function NewOrganization() {
 
     return (
         <div>
-            <Text component={'h1'} size={'xl'} style={{ marginTop: 0 }}>
-                Create your organization!
+            <Text weight={600} size={'xl'} component={'h1'}>
+                Create your organization
             </Text>
 
             <Form
@@ -33,89 +72,34 @@ export default function NewOrganization() {
                     submit(values, { method: 'post' })
                 })}
             >
-                <SimpleGrid spacing={'md'}>
-                    <Paper shadow={'xs'} p={'xl'} withBorder>
-                        <Text weight={600} size={'lg'}>
-                            1. Organization
-                        </Text>
+                <Stack spacing={'md'}>
+                    <Text>
+                        An organization helps you group your funds logically.
+                        You can belong in multiple organizations, as well as
+                        invite other people to your organization.
+                    </Text>
 
-                        <br />
+                    <TextInput
+                        size={'md'}
+                        placeholder={'Organization name'}
+                        error={data?.errors?.email}
+                        {...form.getInputProps('name')}
+                    />
 
-                        <Text>
-                            An organization helps you group your funds
-                            logically. You can belong in multiple organizations,
-                            as well as invite other people to your organization.
-                        </Text>
-
-                        <br />
-
-                        <TextInput
-                            size={'md'}
-                            placeholder={'Organization name'}
-                            error={data?.errors?.email}
-                            {...form.getInputProps('name')}
-                        />
-                    </Paper>
-
-                    <Paper shadow={'xs'} p={'xl'} withBorder>
-                        <Text weight={600} size={'lg'}>
-                            2. Roles
-                        </Text>
-
-                        <br />
-
-                        <Text>
-                            Here you can specify permissions for the different
-                            roles in your organization.
-                            <br />
-                            <br />
-                            For example, a role could be "Finance department",
-                            which would have the ability to reimburse
-                            transactions.
-                        </Text>
-
-                        <br />
-
-                        <TextInput
-                            size={'md'}
-                            placeholder={'Organization name'}
-                            error={data?.errors?.email}
-                            {...form.getInputProps('name')}
-                        />
-                    </Paper>
-
-                    <Paper shadow={'xs'} p={'xl'} withBorder>
-                        <Text weight={600} size={'lg'}>
-                            3. Members
-                        </Text>
-
-                        <br />
-
-                        <Text>
-                            Lastly, start inviting people to your organization!
-                        </Text>
-
-                        <br />
-
-                        <TextInput
-                            size={'md'}
-                            placeholder={'Organization name'}
-                            error={data?.errors?.email}
-                            {...form.getInputProps('name')}
-                        />
-
-                        <br />
-
+                    <div>
                         <Button
-                            type={'submit'}
                             variant={'gradient'}
-                            gradient={{ from: 'violet', to: 'grape' }}
+                            gradient={{
+                                from: 'violet',
+                                to: 'grape',
+                            }}
+                            type={'submit'}
                             loading={transition.state === 'submitting'}
                         >
-                            Create organization!
+                            Create {form.values.name}
                         </Button>
-                    </Paper>
-                </SimpleGrid>
+                    </div>
+                </Stack>
             </Form>
         </div>
     )

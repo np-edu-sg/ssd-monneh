@@ -30,6 +30,7 @@ import type { User } from '@prisma/client'
 import { db } from '~/utils/db.server'
 import * as z from 'zod'
 import { message, regex } from '~/utils/password-requirements'
+import { getValidationErrorObject } from '~/utils/validation.server'
 
 interface LoaderData {
     user: UserSessionData
@@ -43,21 +44,20 @@ type BadRequestError = ThrownResponse<400, string>
 type UnauthorizedError = ThrownResponse<403, string>
 type ThrownResponses = BadRequestError | UnauthorizedError
 
-function exclude<T, Key extends keyof T>(
-    item: T,
-    ...keys: Key[]
-): Omit<T, Key> {
-    for (const key of keys) delete item[key]
-
-    return item
-}
-
 export const loader: LoaderFunction = async ({ request }) => {
     const { username } = await requireUser(request)
     const user = await db.user.findUnique({
+        select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            passwordHash: false,
+        },
         where: { username },
     })
-    return json<LoaderData>({ user: exclude(user as User, 'passwordHash') })
+    if (!user) throw json('User does not exist', { status: 400 })
+    return json<LoaderData>({ user })
 }
 
 const updateBodySchema = z.object({
@@ -98,12 +98,7 @@ export const action: ActionFunction = async ({ request }) => {
             if (!result.success) {
                 return json<ActionData>(
                     {
-                        errors: result.error.issues.reduce<
-                            Record<string, string>
-                        >((a, v) => {
-                            a[v.path.toString()] = v.message
-                            return a
-                        }, {}),
+                        errors: getValidationErrorObject(result.error.issues),
                     },
                     { status: 400 }
                 )
@@ -132,7 +127,7 @@ export const action: ActionFunction = async ({ request }) => {
 
             return createUserSession(user)
         }
-        case 'updatePassword': {
+        case 'update-password': {
             const object: Record<string, string> = {}
             formData.forEach((value, key) => {
                 if (typeof value === 'string') {
@@ -143,12 +138,7 @@ export const action: ActionFunction = async ({ request }) => {
             if (!result.success) {
                 return json<ActionData>(
                     {
-                        errors: result.error.issues.reduce<
-                            Record<string, string>
-                        >((a, v) => {
-                            a[v.path.toString()] = v.message
-                            return a
-                        }, {}),
+                        errors: getValidationErrorObject(result.error.issues),
                     },
                     { status: 400 }
                 )
@@ -323,7 +313,7 @@ export default function ProfilePage() {
                         <Form
                             onSubmit={passwordForm.onSubmit(async (values) => {
                                 await submit(
-                                    { ...values, action: 'updatePassword' },
+                                    { ...values, action: 'update-password' },
                                     { method: 'post' }
                                 )
                             })}

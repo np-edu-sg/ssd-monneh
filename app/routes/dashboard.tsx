@@ -5,10 +5,12 @@ import {
     Avatar,
     Burger,
     Button,
+    Center,
     Group,
     Header,
     MediaQuery,
     Navbar,
+    ScrollArea,
     Stack,
     Text,
     UnstyledButton,
@@ -66,10 +68,10 @@ export default function DashboardLayout() {
         return parseInt(params.organizationId, 10)
     }, [params])
 
-    const dark = colorScheme === 'dark'
-
     const toDashboard = () => navigate('/dashboard', { replace: true })
     const toggleNavbar = () => setOpened((o) => !o)
+
+    const dark = useMemo(() => colorScheme === 'dark', [colorScheme])
 
     return (
         <AppShell
@@ -142,76 +144,95 @@ export default function DashboardLayout() {
                 >
                     <Text weight={600}>My organizations</Text>
                     <br />
-                    {data.organizations.length === 0 ? (
-                        <Text>Nothing here... create one!</Text>
-                    ) : (
-                        <Stack justify={'space-between'}>
-                            {data.organizations.map((organization, idx) => (
-                                <UnstyledButton
-                                    key={idx}
+                    <ScrollArea scrollbarSize={10}>
+                        <Stack
+                            sx={(theme) => ({
+                                paddingTop: theme.spacing.sm,
+                                paddingBottom: theme.spacing.sm,
+                            })}
+                        >
+                            {data.organizations.length === 0 ? (
+                                <Text>Nothing here... create one!</Text>
+                            ) : (
+                                <Stack justify={'space-between'}>
+                                    {data.organizations.map(
+                                        (organization, idx) => (
+                                            <UnstyledButton
+                                                key={idx}
+                                                component={NavLink}
+                                                to={`/dashboard/organizations/${organization.id}`}
+                                                style={{
+                                                    width: '100%',
+                                                }}
+                                                onClick={toggleNavbar}
+                                            >
+                                                <Group grow={false} noWrap>
+                                                    <Avatar
+                                                        size={30}
+                                                        color={
+                                                            currentOrganizationId ===
+                                                            organization.id
+                                                                ? 'violet'
+                                                                : 'gray'
+                                                        }
+                                                    >
+                                                        {organization.name[0]}
+                                                    </Avatar>
+                                                    <Text
+                                                        component={'span'}
+                                                        color={
+                                                            currentOrganizationId ===
+                                                            organization.id
+                                                                ? 'violet'
+                                                                : 'gray'
+                                                        }
+                                                        style={{
+                                                            overflow: 'hidden',
+                                                            textOverflow:
+                                                                'ellipsis',
+                                                            whiteSpace:
+                                                                'nowrap',
+                                                        }}
+                                                    >
+                                                        {organization.name}
+                                                    </Text>
+                                                </Group>
+                                            </UnstyledButton>
+                                        )
+                                    )}
+                                </Stack>
+                            )}
+                            <Center inline>
+                                <Button
                                     component={NavLink}
-                                    to={`/dashboard/organizations/${organization.id}`}
-                                    style={{
-                                        width: '100%',
-                                    }}
+                                    to={'/dashboard/organizations/new'}
+                                    variant={'subtle'}
                                     onClick={toggleNavbar}
                                 >
-                                    <Group grow={false} noWrap>
-                                        <Avatar
-                                            size={30}
-                                            color={
-                                                currentOrganizationId ===
-                                                organization.id
-                                                    ? 'violet'
-                                                    : 'gray'
-                                            }
-                                        >
-                                            {organization.name[0]}
-                                        </Avatar>
-                                        <Text
-                                            component={'span'}
-                                            color={
-                                                currentOrganizationId ===
-                                                organization.id
-                                                    ? 'violet'
-                                                    : 'gray'
-                                            }
-                                            style={{
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {organization.name}
-                                        </Text>
-                                    </Group>
-                                </UnstyledButton>
-                            ))}
+                                    New +
+                                </Button>
+                            </Center>
                         </Stack>
-                    )}
-                    <br />
-                    <Button
-                        component={NavLink}
-                        to={'/dashboard/organizations/new'}
-                        variant={'subtle'}
-                        onClick={toggleNavbar}
-                    >
-                        New +
-                    </Button>
+                    </ScrollArea>
 
-                    <Group style={{ flex: 1 }} align={'flex-end'}>
+                    <Group
+                        style={{ flex: 1 }}
+                        align={'flex-end'}
+                        sx={(theme) => ({ paddingTop: theme.spacing.sm })}
+                    >
                         <UnstyledButton
                             component={NavLink}
                             to={'/dashboard/profile'}
                             style={{ width: '100%' }}
+                            onClick={toggleNavbar}
                         >
                             <Group
                                 noWrap
                                 style={{ width: '100%', cursor: 'pointer' }}
                                 align={'center'}
                             >
-                                <Avatar size={30} color={'violet'}>
-                                    {data.user.firstName[0]}
+                                <Avatar size={30} color={'blue'}>
+                                    {data.user.username[0]}
                                 </Avatar>
                                 <Text
                                     component={'span'}

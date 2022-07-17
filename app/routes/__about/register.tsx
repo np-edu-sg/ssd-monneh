@@ -6,13 +6,18 @@ import { useForm } from '@mantine/form'
 
 import * as z from 'zod'
 import { createUserSession, register } from '~/utils/session.server'
+import { message, regex } from '~/utils/password-requirements'
+import { getValidationErrorObject } from '~/utils/validation.server'
 
 const bodySchema = z.object({
     username: z.string().min(1, 'Username is required'),
     firstName: z.string().min(1, 'First name is required'),
     lastName: z.string().min(1, 'Last name is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email'),
-    password: z.string().min(1, 'Password is required o_0'),
+    password: z
+        .string()
+        .min(1, 'New password is required')
+        .regex(regex, message),
 })
 
 interface ActionData {
@@ -32,13 +37,7 @@ export const action: ActionFunction = async ({ request }) => {
     if (!result.success) {
         return json<ActionData>(
             {
-                errors: result.error.issues.reduce<Record<string, string>>(
-                    (a, v) => {
-                        a[v.path.toString()] = v.message
-                        return a
-                    },
-                    {}
-                ),
+                errors: getValidationErrorObject(result.error.issues),
             },
             { status: 400 }
         )
@@ -82,8 +81,7 @@ export default function RegisterPage() {
                 value.length > 0 ? null : 'Last name is required',
             email: (value) =>
                 /^\S+@\S+$/.test(value) ? null : 'Invalid email',
-            password: (value) =>
-                value.length > 0 ? null : 'Password is required',
+            password: (value) => (regex.test(value) ? null : message),
         },
     })
 

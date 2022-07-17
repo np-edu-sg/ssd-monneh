@@ -9,26 +9,49 @@ datasource db {
 
 generator js {
     provider        = "prisma-client-js"
-    previewFeatures = ["referentialIntegrity", "interactiveTransactions"]
+    previewFeatures = ["referentialIntegrity", "interactiveTransactions", "fullTextSearch", "fullTextIndex"]
+}
+
+model Audit {
+    id              Int             @id @default(autoincrement())
+
+    timestamp       DateTime
+    subject         String
+    action          String
+    object          String
+
+    organization    Organization    @relation(fields: [organizationId], references: [id])
+    organizationId  Int
 }
 
 model Organization {
-    id      Int      @id @default(autoincrement())
-    name    String
-    wallets Wallet[]
-    roles   Role[]
-    users   User[]
+    id              Int      @id @default(autoincrement())
+
+    name            String
+    completedSetup  Boolean
+
+    roles           Role[]
+    users           User[]
+    audits          Audit[]
+    wallets         Wallet[]
 }
 
 model Role {
-    id                  Int           @id @default(autoincrement())
-    type                String
-    sensitivityLevel    Int
-    organization        Organization  @relation(fields: [organizationId], references: [id])
-    organizationId      Int
-    users               User[]
-    grantedWallets      Wallet[]
-    blockedTransactions Transaction[]
+    id                          Int           @id @default(autoincrement())
+    name                        String
+    description                 String
+
+    allowApproveTransactions    Boolean
+    allowCreateTransactions     Boolean
+    allowCreateWallets          Boolean
+    allowUpdateWallets          Boolean
+    allowDeleteWallets          Boolean
+    allowUpdateOrganization     Boolean
+    allowReadAuditLog           Boolean
+
+    organization                Organization  @relation(fields: [organizationId], references: [id])
+    organizationId              Int
+    users                       User[]
 }
 
 model User {
@@ -41,6 +64,8 @@ model User {
     reviewedTransactions Transaction[]  @relation("ReviewedTransactions")
     createdTransactions  Transaction[]  @relation("CreatedTransactions")
     roles                Role[]
+
+    @@fulltext([username, email, firstName, lastName])
 }
 
 model Wallet {
@@ -50,33 +75,19 @@ model Wallet {
     organization   Organization  @relation(fields: [organizationId], references: [id])
     organizationId Int
     transactions   Transaction[]
-    grantedFor     Role[]
 }
 
 model Transaction {
     id               Int      @id @default(autoincrement())
+
     wallet           Wallet   @relation(fields: [walletId], references: [id])
     walletId         Int
     entryDateTime    DateTime
     spendDateTime    DateTime
-    sensitivity      Int
+    transactionValue Decimal
+
     creator          User     @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
     creatorUsername  String
     reviewer         User?    @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
     reviewerUsername String?
-    transactionValue Decimal
-    blockedFor       Role[]
-}
-
-model CasbinRule {
-    id    Int     @id @default(autoincrement())
-    ptype String
-    v0    String?
-    v1    String?
-    v2    String?
-    v3    String?
-    v4    String?
-    v5    String?
-
-    @@map("casbin_rule")
 }

@@ -6,6 +6,7 @@ import { useForm } from '@mantine/form'
 import * as z from 'zod'
 
 import { createUserSession, login } from '~/utils/session.server'
+import { getValidationErrorObject } from '~/utils/validation.server'
 
 interface ActionData {
     errors?: Record<string, string>
@@ -29,13 +30,7 @@ export const action: ActionFunction = async ({ request }) => {
     if (!result.success) {
         return json<ActionData>(
             {
-                errors: result.error.issues.reduce<Record<string, string>>(
-                    (a, v) => {
-                        a[v.path.toString()] = v.message
-                        return a
-                    },
-                    {}
-                ),
+                errors: getValidationErrorObject(result.error.issues),
             },
             { status: 400 }
         )
