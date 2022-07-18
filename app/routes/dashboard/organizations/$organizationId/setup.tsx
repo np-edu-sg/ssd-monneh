@@ -1,8 +1,8 @@
 import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
 import { formList, useForm } from '@mantine/form'
-import { forwardRef, useEffect, useState } from 'react'
-import { useDebounce } from 'ahooks'
-import type { SelectItem, SelectItemProps } from '@mantine/core'
+import { forwardRef, useCallback, useEffect, useMemo } from 'react'
+import { useDebounceEffect, useDebounceFn } from 'ahooks'
+import type { SelectItemProps } from '@mantine/core'
 import {
     ActionIcon,
     Autocomplete,
@@ -10,13 +10,12 @@ import {
     Button,
     Card,
     Group,
-    Paper,
-    SimpleGrid,
-    Stack,
+    ScrollArea,
+    Table,
     Text,
 } from '@mantine/core'
 import { randomId } from '@mantine/hooks'
-import { Car, Trash } from 'tabler-icons-react'
+import { Plus, Trash } from 'tabler-icons-react'
 import type { ActionFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { requireUser } from '~/utils/session.server'
@@ -46,7 +45,7 @@ interface ActionData {
 }
 
 export const action: ActionFunction = async ({ request }) => {
-    const { username } = await requireUser(request)
+    await requireUser(request)
     const formData = await request.formData()
 
     const search = formData.get('search')
@@ -76,10 +75,15 @@ export const action: ActionFunction = async ({ request }) => {
     })
 }
 
+type AutocompleteFilter = (
+    value: string,
+    item: { value: string; label: string }
+) => boolean
+
 export default function OrganizationSetupPage() {
     const submit = useSubmit()
-    const data = useActionData<ActionData>()
     const transition = useTransition()
+    const data = useActionData<ActionData>()
 
     const form = useForm({
         initialValues: {
@@ -97,15 +101,28 @@ export default function OrganizationSetupPage() {
         },
     })
 
-    const [userSearch, setUserSearch] = useState('')
-    const debouncedUserSearch = useDebounce(userSearch, {
-        wait: 200,
-        leading: true,
-    })
+    const { run: runSearch } = useDebounceFn(
+        (search: string) => {
+            submit({ search }, { method: 'post' })
+        },
+        { wait: 200 }
+    )
 
-    useEffect(() => {
-        submit({ search: debouncedUserSearch }, { method: 'post' })
-    }, [debouncedUserSearch, submit])
+    const autocompleteFilter: AutocompleteFilter = useCallback(
+        (_, { value }) => {
+            return (
+                form.values.members
+                    .map(({ username }) => username)
+                    .indexOf(value) === -1
+            )
+        },
+        [form.values.members]
+    )
+
+    const handleAutocompleteChange = (idx: number) => (value: string) => {
+        form.getListInputProps('members', idx, 'username').onChange(value)
+        runSearch(value)
+    }
 
     return (
         <div>
@@ -115,44 +132,13 @@ export default function OrganizationSetupPage() {
 
             <Form onSubmit={form.onSubmit(async () => {})}>
                 <Card>
-                    <Text weight={600} size={'lg'}>
-                        Add your teammates
-                    </Text>
-                    <br />
-                    <Stack>
-                        {form.values.members.map((item, idx) => (
-                            <Group key={item.key}>
-                                <Autocomplete
-                                    itemComponent={AutoCompleteItem}
-                                    filter={() => true}
-                                    data={data?.users ?? []}
-                                    onItemSubmit={({ value }) =>
-                                        form
-                                            .getListInputProps(
-                                                'members',
-                                                idx,
-                                                'username'
-                                            )
-                                            .onChange(value)
-                                    }
-                                    onChange={setUserSearch}
-                                    value={userSearch}
-                                />
+                    <Group position={'apart'}>
+                        <Text weight={600} size={'lg'}>
+                            Add your teammates
+                        </Text>
 
-                                <ActionIcon
-                                    color={'red'}
-                                    variant={'hover'}
-                                    onClick={() =>
-                                        form.removeListItem('members', idx)
-                                    }
-                                >
-                                    <Trash size={16} />
-                                </ActionIcon>
-                            </Group>
-                        ))}
-                    </Stack>
-                    <div>
                         <Button
+                            variant={'outline'}
                             onClick={() => {
                                 form.addListItem('members', {
                                     username: '',
@@ -161,9 +147,69 @@ export default function OrganizationSetupPage() {
                                 })
                             }}
                         >
-                            New
+                            <Plus size={20} />
                         </Button>
-                    </div>
+                    </Group>
+
+                    <br />
+
+                    <ScrollArea offsetScrollbars scrollbarSize={10}>
+                        <Table verticalSpacing={'sm'}>
+                            <colgroup>
+                                <col style={{ width: '75%', minWidth: 300 }} />
+                                <col style={{ width: '20%', minWidth: 200 }} />
+                                <col style={{ width: '5%' }} />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Role</th>
+                                    <th>Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {form.values.members.map((item, idx) => (
+                                    <tr key={item.key}>
+                                        <td>
+                                            <Autocomplete
+                                                placeholder={
+                                                    'Username or email'
+                                                }
+                                                itemComponent={AutoCompleteItem}
+                                                filter={autocompleteFilter}
+                                                data={data?.users ?? []}
+                                                value={
+                                                    form.getListInputProps(
+                                                        'members',
+                                                        idx,
+                                                        'username'
+                                                    ).value
+                                                }
+                                                onChange={handleAutocompleteChange(
+                                                    idx
+                                                )}
+                                            />
+                                        </td>
+                                        <td>Role</td>
+                                        <td>
+                                            <ActionIcon
+                                                color={'red'}
+                                                variant={'hover'}
+                                                onClick={() =>
+                                                    form.removeListItem(
+                                                        'members',
+                                                        idx
+                                                    )
+                                                }
+                                            >
+                                                <Trash size={16} />
+                                            </ActionIcon>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </ScrollArea>
                 </Card>
             </Form>
         </div>
