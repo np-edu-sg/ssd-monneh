@@ -1,4 +1,7 @@
 import { RemixBrowser } from '@remix-run/react'
-import { hydrate } from 'react-dom'
+import { hydrateRoot } from 'react-dom/client'
+import { startTransition } from 'react'
 
-hydrate(<RemixBrowser />, document)
+startTransition(() => {
+    hydrateRoot(document, <RemixBrowser />)
+})
