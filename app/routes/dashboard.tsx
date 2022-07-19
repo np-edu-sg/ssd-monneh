@@ -82,7 +82,7 @@ export default function DashboardLayout() {
     return (
         <AppShell
             fixed
-            padding={'md'}
+            padding={'xl'}
             navbarOffsetBreakpoint={'sm'}
             asideOffsetBreakpoint={'sm'}
             styles={{
