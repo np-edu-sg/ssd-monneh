@@ -2,7 +2,7 @@ import type { ThrownResponse } from '@remix-run/react'
 import { useCatch, useLoaderData } from '@remix-run/react'
 import type { LoaderFunction, ErrorBoundaryComponent } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
-import { Center, Stack, Text } from '@mantine/core'
+import { Center, Group, Stack, Text } from '@mantine/core'
 import { db } from '~/utils/db.server'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
@@ -12,6 +12,11 @@ interface LoaderData {
         id: number
         name: string
         completedSetup: boolean
+        wallets: {
+            id: number
+            name: string
+            balance: number
+        }[]
     }
 }
 
@@ -32,7 +37,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
                 },
             },
         })
-        .organization()
+        .organization({
+            include: {
+                wallets: true,
+            },
+        })
 
     if (!organization)
         throw json('Organization does not exist', { status: 404 })
@@ -46,7 +55,26 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 export default function OrganizationPage() {
     const { organization } = useLoaderData<LoaderData>()
 
-    return <div>{JSON.stringify(organization)}</div>
+    return (
+        <div>
+            <Text weight={600} size={'xl'} component={'h1'}>
+                {organization.name}
+            </Text>
+
+            <Text size={'md'} component={'h2'}>
+                Wallets
+            </Text>
+
+            <Stack>
+                {organization.wallets.map(({ id, name, balance }) => (
+                    <Group key={id}>
+                        <Text>{name}</Text>
+                        <Text>${balance}</Text>
+                    </Group>
+                ))}
+            </Stack>
+        </div>
+    )
 }
 
 export function CatchBoundary() {
