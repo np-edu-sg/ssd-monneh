@@ -198,9 +198,33 @@ interface LoaderData {
 }
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-    await requireUser(request)
+    const { username } = await requireUser(request)
+
+    // This is just to satisfy Typescript. The `dashboard.tsx` layout should already check for this
     if (!params.organizationId)
         throw json('Organization ID is required', { status: 400 })
+
+    const organizationId = parseInt(params.organizationId)
+
+    await requireAuthorization(
+        username,
+        organizationId,
+        (role) => role.allowUpdateOrganization
+    )
+
+    const organization = await db.organization.findUnique({
+        where: {
+            id: organizationId,
+        },
+    })
+
+    if (!organization) {
+        return redirect(`/dashboard`)
+    }
+
+    if (organization.completedSetup) {
+        return redirect(`/dashboard/organizations/${params.organizationId}`)
+    }
 
     return json<LoaderData>({
         roles: Object.values(Role).map((key) => ({
@@ -337,7 +361,15 @@ export default function OrganizationSetupPage() {
         runSearch(value)
     }
 
-    console.log(form.values, form.errors)
+    const skipSetup = () => {
+        submit(
+            {
+                members: '[]',
+                action: Action.AddMembers,
+            },
+            { method: 'post' }
+        )
+    }
 
     return (
         <div>
@@ -460,7 +492,13 @@ export default function OrganizationSetupPage() {
                 <br />
 
                 <Group position={'apart'}>
-                    <Button variant={'outline'}>Skip</Button>
+                    <Button
+                        variant={'outline'}
+                        type={'button'}
+                        onClick={skipSetup}
+                    >
+                        Skip
+                    </Button>
                     <Button type={'submit'}>Continue</Button>
                 </Group>
             </Form>
