@@ -150,7 +150,7 @@ export default function OrganizationPage() {
                     })}
                 >
                     <Text size={'xl'} weight={600}>
-                        Activity logs
+                        Team members
                     </Text>
                 </Stack>
             </SimpleGrid>
