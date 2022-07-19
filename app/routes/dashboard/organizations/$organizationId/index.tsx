@@ -6,6 +6,7 @@ import {
     Badge,
     Box,
     Button,
+    Card,
     Center,
     Group,
     SimpleGrid,
@@ -142,17 +143,19 @@ export default function OrganizationPage() {
                     )}
                 </Stack>
 
-                <Stack
-                    sx={(theme) => ({
-                        [theme.fn.largerThan('md')]: {
-                            alignItems: 'flex-end',
-                        },
-                    })}
-                >
-                    <Text size={'xl'} weight={600}>
-                        Team members
-                    </Text>
-                </Stack>
+                <Card>
+                    <Stack
+                        sx={(theme) => ({
+                            [theme.fn.largerThan('md')]: {
+                                alignItems: 'flex-end',
+                            },
+                        })}
+                    >
+                        <Text size={'xl'} weight={600}>
+                            Team members
+                        </Text>
+                    </Stack>
+                </Card>
             </SimpleGrid>
         </div>
     )
