@@ -22,29 +22,25 @@ import {
     Group,
     ScrollArea,
     Select,
-    Stack,
     Table,
     Text,
 } from '@mantine/core'
 import { randomId } from '@mantine/hooks'
 import { Plus, Trash } from 'tabler-icons-react'
-import type {
-    ActionFunction,
-    LoaderFunction,
-    ErrorBoundaryComponent,
-} from '@remix-run/node'
+import type { ActionFunction, LoaderFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
-import { requireUser } from '~/utils/session.server'
-import { db } from '~/utils/db.server'
+import { showNotification } from '@mantine/notifications'
+import invariant from 'tiny-invariant'
 import * as z from 'zod'
+
+import { db } from '~/utils/db.server'
+import { requireUser } from '~/utils/session.server'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import {
     defaultRoles,
     requireAuthorization,
 } from '~/utils/authorization.server'
 import { Role } from '~/utils/roles'
-import { showNotification } from '@mantine/notifications'
-import invariant from 'tiny-invariant'
 
 enum Action {
     UserSearch = 'user-search',
@@ -531,29 +527,6 @@ export function CatchBoundary() {
             <Text weight={600} size={'xl'}>
                 {error.status} {error.data}
             </Text>
-        </Center>
-    )
-}
-
-export const ErrorBoundary: ErrorBoundaryComponent = ({ error }) => {
-    return (
-        <Center
-            p={'lg'}
-            component={'section'}
-            sx={(theme) => ({
-                backgroundColor:
-                    theme.colorScheme === 'dark'
-                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
-                        : theme.colors.red[4],
-                height: '100%',
-            })}
-        >
-            <Stack>
-                <Text weight={600} size={'xl'}>
-                    {error.name}
-                </Text>
-                <Text>{error.message}</Text>
-            </Stack>
         </Center>
     )
 }
