@@ -6,6 +6,7 @@ import { Center, Group, Stack, Text } from '@mantine/core'
 import { db } from '~/utils/db.server'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
+import { requireAuthorization } from '~/utils/authorization.server'
 
 interface LoaderData {
     organization: {
@@ -28,20 +29,16 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const { username } = await requireUser(request)
 
     const id = parseInt(params.organizationId) || 0
-    const organization = await db.organizationToUser
-        .findUnique({
-            where: {
-                organizationId_username: {
-                    organizationId: id,
-                    username,
-                },
-            },
-        })
-        .organization({
-            include: {
-                wallets: true,
-            },
-        })
+    await requireAuthorization(username, id, () => true)
+
+    const organization = await db.organization.findUnique({
+        include: {
+            wallets: true,
+        },
+        where: {
+            id,
+        },
+    })
 
     if (!organization)
         throw json('Organization does not exist', { status: 404 })

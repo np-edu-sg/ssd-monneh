@@ -77,7 +77,7 @@ export async function requireAuthorization(
         },
     })
     if (!result) {
-        throw json('Unauthorized', { status: 403 })
+        throw json('Not found', { status: 404 })
     }
 
     if (!Object.values(Role).includes(result.role as Role)) {
@@ -98,4 +98,6 @@ export async function requireAuthorization(
     if (!selector(role)) {
         throw json('Unauthorized', { status: 403 })
     }
+
+    return result
 }
