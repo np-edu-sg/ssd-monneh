@@ -1,6 +1,13 @@
-import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
+import {
+    Form,
+    useActionData,
+    useLoaderData,
+    useSubmit,
+    useTransition,
+} from '@remix-run/react'
 import { formList, useForm } from '@mantine/form'
-import { forwardRef, useCallback } from 'react'
+import type { ComponentPropsWithoutRef } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo } from 'react'
 import { useDebounceFn } from 'ahooks'
 import type { SelectItemProps } from '@mantine/core'
 import {
@@ -11,15 +18,203 @@ import {
     Card,
     Group,
     ScrollArea,
+    Select,
     Table,
     Text,
 } from '@mantine/core'
 import { randomId } from '@mantine/hooks'
 import { Plus, Trash } from 'tabler-icons-react'
-import type { ActionFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import type { ActionFunction, LoaderFunction } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
 import { requireUser } from '~/utils/session.server'
 import { db } from '~/utils/db.server'
+import * as z from 'zod'
+import { getValidationErrorObject } from '~/utils/validation.server'
+import {
+    defaultRoles,
+    requireAuthorization,
+} from '~/utils/authorization.server'
+import { Role } from '~/utils/roles'
+import { showNotification } from '@mantine/notifications'
+
+enum Action {
+    UserSearch = 'user-search',
+    AddMembers = 'add-members',
+}
+
+interface UserSearchActionData {
+    readonly action: Action.UserSearch
+    users: { label: string; value: string }[]
+}
+
+interface AddMembersActionData {
+    readonly action: Action.AddMembers
+    errors?: Record<string, string>
+}
+
+type ActionData = UserSearchActionData | AddMembersActionData
+
+const createAddMembersBodySchema = (requesterUsername: string) =>
+    z.object({
+        members: z.array(
+            z.object({
+                username: z
+                    .string()
+                    .min(1, 'Username is required')
+                    .refine(
+                        (value) => value !== requesterUsername,
+                        'Username cannot be your own'
+                    ),
+                role: z.nativeEnum(Role),
+            })
+        ),
+    })
+
+export const action: ActionFunction = async ({ request, params }) => {
+    if (!params.organizationId)
+        throw json('Organization ID is required', { status: 400 })
+
+    const organizationId = parseInt(params.organizationId)
+    const { username } = await requireUser(request)
+    const formData = await request.formData()
+
+    const action = formData.get('action')
+
+    switch (action) {
+        case Action.UserSearch: {
+            const search = formData.get('search')
+            if (!search || typeof search !== 'string') {
+                return json<ActionData>({
+                    action: Action.UserSearch,
+                    users: [],
+                })
+            }
+
+            const data = await db.user.findMany({
+                select: { username: true, firstName: true, lastName: true },
+                where: {
+                    OR: {
+                        username: { search },
+                        firstName: { search },
+                        lastName: { search },
+                        email: { search },
+                    },
+                    NOT: {
+                        username,
+                    },
+                },
+            })
+
+            return json<ActionData>({
+                action: Action.UserSearch,
+                users: data.map(({ firstName, lastName, username }) => ({
+                    label: `${firstName} ${lastName}`,
+                    value: username,
+                })),
+            })
+        }
+
+        case Action.AddMembers: {
+            const object: Record<string, string> = {}
+            formData.forEach((value, key) => {
+                if (typeof value === 'string') {
+                    object[key] = value
+                }
+            })
+            if (object['members']) {
+                try {
+                    object['members'] = JSON.parse(object['members'])
+                } catch {
+                    return json<ActionData>({
+                        action: Action.AddMembers,
+                        errors: {
+                            members: 'Members must be a marshalled object',
+                        },
+                    })
+                }
+            }
+            const result = await createAddMembersBodySchema(
+                username
+            ).safeParseAsync(object)
+            if (!result.success) {
+                // TODO - although there is a validation error response, it is not handled on the client because of the list nature
+                return json<ActionData>({
+                    action: Action.AddMembers,
+                    errors: getValidationErrorObject(result.error.issues),
+                })
+            }
+
+            await requireAuthorization(
+                username,
+                organizationId,
+                (role) => role.allowUpdateOrganization
+            )
+
+            await db.$transaction(async (prisma) => {
+                await Promise.all(
+                    result.data.members.map(({ username, role }) =>
+                        prisma.organizationToUser.upsert({
+                            where: {
+                                organizationId_username: {
+                                    organizationId,
+                                    username,
+                                },
+                            },
+                            update: {
+                                role,
+                                username,
+                                organizationId,
+                            },
+                            create: {
+                                role,
+                                username,
+                                organizationId,
+                            },
+                        })
+                    )
+                )
+
+                await prisma.organization.update({
+                    where: {
+                        id: organizationId,
+                    },
+                    data: {
+                        completedSetup: true,
+                    },
+                })
+            })
+
+            return redirect(`/dashboard/organizations/${organizationId}`)
+        }
+    }
+}
+
+interface LoaderData {
+    roles: {
+        id: string
+        name: string
+        description: string
+    }[]
+}
+
+export const loader: LoaderFunction = async ({ request, params }) => {
+    await requireUser(request)
+    if (!params.organizationId)
+        throw json('Organization ID is required', { status: 400 })
+
+    return json<LoaderData>({
+        roles: Object.values(Role).map((key) => ({
+            id: key,
+            name: defaultRoles[key].name,
+            description: defaultRoles[key].description,
+        })),
+    })
+}
+
+type AutocompleteFilter = (
+    value: string,
+    item: { value: string; label: string }
+) => boolean
 
 const AutoCompleteItem = forwardRef<HTMLDivElement, SelectItemProps>(
     ({ label, value, ...others }: SelectItemProps, ref) => (
@@ -40,82 +235,100 @@ const AutoCompleteItem = forwardRef<HTMLDivElement, SelectItemProps>(
     )
 )
 
-interface ActionData {
-    users: { label: string; value: string }[]
+interface ItemProps extends SelectItemProps, ComponentPropsWithoutRef<'div'> {
+    description: string
 }
 
-export const action: ActionFunction = async ({ request }) => {
-    await requireUser(request)
-    const formData = await request.formData()
-
-    const search = formData.get('search')
-    if (!search || typeof search !== 'string') {
-        return json<ActionData>({
-            users: [],
-        })
-    }
-
-    const data = await db.user.findMany({
-        select: { username: true, firstName: true, lastName: true },
-        where: {
-            OR: {
-                username: { search },
-                firstName: { search },
-                lastName: { search },
-                email: { search },
-            },
-        },
-    })
-
-    return json<ActionData>({
-        users: data.map(({ firstName, lastName, username }) => ({
-            label: `${firstName} ${lastName}`,
-            value: username,
-        })),
-    })
-}
-
-type AutocompleteFilter = (
-    value: string,
-    item: { value: string; label: string }
-) => boolean
+const RoleSelectItem = forwardRef<HTMLDivElement, ItemProps>(
+    ({ label, description, ...others }: ItemProps, ref) => (
+        <div ref={ref} {...others}>
+            <Group noWrap>
+                <div>
+                    <Text size={'sm'}>{label}</Text>
+                    <Text size={'xs'} color={'dimmed'}>
+                        {description}
+                    </Text>
+                </div>
+            </Group>
+        </div>
+    )
+)
 
 export default function OrganizationSetupPage() {
     const submit = useSubmit()
     const transition = useTransition()
-    const data = useActionData<ActionData>()
+    const actionData = useActionData<ActionData>()
+    const loaderData = useLoaderData<LoaderData>()
+
+    useEffect(() => {
+        if (actionData?.action !== Action.AddMembers) return
+        if (!actionData.errors) return
+
+        showNotification({
+            color: 'red',
+            title: 'Error setting up',
+            message: (
+                <>
+                    {Object.values(actionData.errors).map((v, idx) => (
+                        <Text key={idx} size={'sm'}>
+                            {v}
+                        </Text>
+                    ))}
+                </>
+            ),
+        })
+    }, [actionData])
 
     const form = useForm({
         initialValues: {
             members: formList<{
                 username: string
-                roleId: number
+                role: string
                 key: string
             }>([
                 {
                     username: '',
-                    roleId: -1,
+                    role: Role.Member,
                     key: randomId(),
                 },
             ]),
         },
+
+        validate: {
+            members: {
+                username: (value) =>
+                    value.length > 0 ? null : 'Username is required',
+                role: (value) => (value.length > 0 ? null : 'Role is required'),
+            },
+        },
     })
+
+    const roles = useMemo(
+        () =>
+            loaderData.roles.map(({ id, name, description }) => ({
+                value: id,
+                label: name,
+                description,
+            })),
+        [loaderData.roles]
+    )
 
     const { run: runSearch } = useDebounceFn(
         (search: string) => {
-            submit({ search }, { method: 'post' })
+            submit({ search, action: Action.UserSearch }, { method: 'post' })
         },
-        { wait: 200 }
+        { wait: 300 }
     )
 
-    const autocompleteFilter: AutocompleteFilter = useCallback(
-        (_, { value }) => {
-            return (
-                form.values.members
-                    .map(({ username }) => username)
-                    .indexOf(value) === -1
-            )
-        },
+    const autocompleteFilter: (idx: number) => AutocompleteFilter = useCallback(
+        (idx) =>
+            (_, { value }) => {
+                return (
+                    form.values.members
+                        .map(({ username }, idx2) => idx !== idx2 && username)
+                        .indexOf(value) === -1
+                )
+            },
         [form.values.members]
     )
 
@@ -124,13 +337,25 @@ export default function OrganizationSetupPage() {
         runSearch(value)
     }
 
+    console.log(form.values, form.errors)
+
     return (
         <div>
             <Text weight={600} size={'xl'} component={'h1'}>
                 Setup your organization!
             </Text>
 
-            <Form onSubmit={form.onSubmit(async () => {})}>
+            <Form
+                onSubmit={form.onSubmit(async (values) => {
+                    submit(
+                        {
+                            members: JSON.stringify(values.members),
+                            action: Action.AddMembers,
+                        },
+                        { method: 'post' }
+                    )
+                })}
+            >
                 <Card>
                     <Group position={'apart'}>
                         <Text weight={600} size={'lg'}>
@@ -142,7 +367,7 @@ export default function OrganizationSetupPage() {
                             onClick={() => {
                                 form.addListItem('members', {
                                     username: '',
-                                    roleId: 1,
+                                    role: Role.Member,
                                     key: randomId(),
                                 })
                             }}
@@ -156,8 +381,8 @@ export default function OrganizationSetupPage() {
                     <ScrollArea offsetScrollbars scrollbarSize={10}>
                         <Table verticalSpacing={'sm'}>
                             <colgroup>
-                                <col style={{ width: '75%', minWidth: 300 }} />
-                                <col style={{ width: '20%', minWidth: 200 }} />
+                                <col style={{ width: '55%', minWidth: 300 }} />
+                                <col style={{ width: '40%', minWidth: 200 }} />
                                 <col style={{ width: '5%' }} />
                             </colgroup>
                             <thead>
@@ -176,8 +401,18 @@ export default function OrganizationSetupPage() {
                                                     'Username or email'
                                                 }
                                                 itemComponent={AutoCompleteItem}
-                                                filter={autocompleteFilter}
-                                                data={data?.users ?? []}
+                                                filter={autocompleteFilter(idx)}
+                                                data={
+                                                    actionData?.action ===
+                                                    Action.UserSearch
+                                                        ? actionData.users
+                                                        : []
+                                                }
+                                                {...form.getListInputProps(
+                                                    'members',
+                                                    idx,
+                                                    'username'
+                                                )}
                                                 value={
                                                     form.getListInputProps(
                                                         'members',
@@ -190,7 +425,17 @@ export default function OrganizationSetupPage() {
                                                 )}
                                             />
                                         </td>
-                                        <td>Role</td>
+                                        <td>
+                                            <Select
+                                                data={roles}
+                                                itemComponent={RoleSelectItem}
+                                                {...form.getListInputProps(
+                                                    'members',
+                                                    idx,
+                                                    'role'
+                                                )}
+                                            />
+                                        </td>
                                         <td>
                                             <ActionIcon
                                                 color={'red'}
@@ -211,6 +456,13 @@ export default function OrganizationSetupPage() {
                         </Table>
                     </ScrollArea>
                 </Card>
+
+                <br />
+
+                <Group position={'apart'}>
+                    <Button variant={'outline'}>Skip</Button>
+                    <Button type={'submit'}>Continue</Button>
+                </Group>
             </Form>
         </div>
     )

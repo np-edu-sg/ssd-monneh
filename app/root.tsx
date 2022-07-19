@@ -1,6 +1,4 @@
 import type { LinksFunction, MetaFunction } from '@remix-run/node'
-import type { ColorScheme } from '@mantine/core'
-import { ColorSchemeProvider, MantineProvider } from '@mantine/core'
 import {
     Links,
     LiveReload,
@@ -10,7 +8,11 @@ import {
     ScrollRestoration,
 } from '@remix-run/react'
 
+import type { ColorScheme } from '@mantine/core'
+import { ColorSchemeProvider, MantineProvider } from '@mantine/core'
 import { useHotkeys, useLocalStorage } from '@mantine/hooks'
+import { NotificationsProvider } from '@mantine/notifications'
+
 import stylesheetUrl from './styles.css'
 
 export const meta: MetaFunction = () => ({
@@ -67,7 +69,9 @@ export default function App() {
                         withGlobalStyles
                         withNormalizeCSS
                     >
-                        <Outlet />
+                        <NotificationsProvider>
+                            <Outlet />
+                        </NotificationsProvider>
                     </MantineProvider>
                 </ColorSchemeProvider>
 

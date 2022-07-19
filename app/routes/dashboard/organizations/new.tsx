@@ -7,6 +7,7 @@ import { json, redirect } from '@remix-run/node'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { requireUser } from '~/utils/session.server'
+import { Role } from '~/utils/roles'
 
 interface ActionData {
     errors?: Record<string, string>
@@ -30,21 +31,22 @@ export const action: ActionFunction = async ({ request }) => {
         })
     }
 
-    const { id } = await db.organization.create({
-        data: {
-            name: result.data.name,
-            completedSetup: false,
-            users: {
-                connect: [
-                    {
+    return db.$transaction(async (prisma) => {
+        const { id } = await prisma.organization.create({
+            data: {
+                name: result.data.name,
+                completedSetup: false,
+                users: {
+                    create: {
+                        role: Role.Owner,
                         username,
                     },
-                ],
+                },
             },
-        },
-    })
+        })
 
-    return redirect(`/dashboard/organizations/${id}`)
+        return redirect(`/dashboard/organizations/${id}`)
+    })
 }
 
 export default function NewOrganization() {

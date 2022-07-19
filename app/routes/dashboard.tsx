@@ -26,31 +26,50 @@ import {
 } from '@remix-run/react'
 import { MoonStars, Sun } from 'tabler-icons-react'
 import type { LoaderFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
-
-import type { Organization } from '@prisma/client'
+import { json, redirect } from '@remix-run/node'
 
 import { db } from '~/utils/db.server'
 import type { UserSessionData } from '~/utils/session.server'
 import { requireUser } from '~/utils/session.server'
 
 interface LoaderData {
-    organizations: Organization[]
+    organizations: { id: number; name: string }[]
     user: UserSessionData
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, params }) => {
     const user = await requireUser(request)
-    const organizations = await db.organization.findMany({
-        where: {
-            users: {
-                every: {
-                    username: user.username,
+    const { organizationId } = params
+    if (organizationId) {
+        try {
+            const organization = await db.organization.findUnique({
+                where: { id: parseInt(organizationId) },
+            })
+            if (!organization) {
+                return redirect('/dashboard')
+            }
+        } catch {
+            return redirect('/dashboard')
+        }
+    }
+
+    const organizations = await db.organizationToUser.findMany({
+        include: {
+            organization: {
+                select: {
+                    id: true,
+                    name: true,
                 },
             },
         },
+        where: {
+            username: user.username,
+        },
     })
-    return json<LoaderData>({ organizations, user })
+    return json<LoaderData>({
+        organizations: organizations.map(({ organization }) => organization),
+        user,
+    })
 }
 
 export default function DashboardLayout() {

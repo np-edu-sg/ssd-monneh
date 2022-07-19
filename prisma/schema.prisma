@@ -2,92 +2,82 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-    provider             = "mysql"
-    url                  = env("DATABASE_URL")
-    referentialIntegrity = "prisma"
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  referentialIntegrity = "prisma"
 }
 
 generator js {
-    provider        = "prisma-client-js"
-    previewFeatures = ["referentialIntegrity", "interactiveTransactions", "fullTextSearch", "fullTextIndex"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity", "interactiveTransactions", "fullTextSearch", "fullTextIndex"]
 }
 
 model Audit {
-    id              Int             @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-    timestamp       DateTime
-    subject         String
-    action          String
-    object          String
+  timestamp DateTime
+  subject   String
+  action    String
+  object    String
 
-    organization    Organization    @relation(fields: [organizationId], references: [id])
-    organizationId  Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId Int
 }
 
 model Organization {
-    id              Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-    name            String
-    completedSetup  Boolean
+  name           String
+  completedSetup Boolean
 
-    roles           Role[]
-    users           User[]
-    audits          Audit[]
-    wallets         Wallet[]
-}
-
-model Role {
-    id                          Int           @id @default(autoincrement())
-    name                        String
-    description                 String
-
-    allowApproveTransactions    Boolean
-    allowCreateTransactions     Boolean
-    allowCreateWallets          Boolean
-    allowUpdateWallets          Boolean
-    allowDeleteWallets          Boolean
-    allowUpdateOrganization     Boolean
-    allowReadAuditLog           Boolean
-
-    organization                Organization  @relation(fields: [organizationId], references: [id])
-    organizationId              Int
-    users                       User[]
+  audits  Audit[]
+  wallets Wallet[]
+  users   OrganizationToUser[]
 }
 
 model User {
-    username             String         @id
-    email                String
-    firstName            String
-    lastName             String
-    passwordHash         String
-    organizations        Organization[]
-    reviewedTransactions Transaction[]  @relation("ReviewedTransactions")
-    createdTransactions  Transaction[]  @relation("CreatedTransactions")
-    roles                Role[]
+  username             String               @id
+  email                String
+  firstName            String
+  lastName             String
+  passwordHash         String
+  reviewedTransactions Transaction[]        @relation("ReviewedTransactions")
+  createdTransactions  Transaction[]        @relation("CreatedTransactions")
+  organizations        OrganizationToUser[]
 
-    @@fulltext([username, email, firstName, lastName])
+  @@fulltext([username, email, firstName, lastName])
+}
+
+model OrganizationToUser {
+  role           String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId Int
+  user           User         @relation(fields: [username], references: [username])
+  username       String
+
+  @@id([organizationId, username])
 }
 
 model Wallet {
-    id             Int           @id @default(autoincrement())
-    name           String
-    balance        Decimal
-    organization   Organization  @relation(fields: [organizationId], references: [id])
-    organizationId Int
-    transactions   Transaction[]
+  id             Int           @id @default(autoincrement())
+  name           String
+  balance        Decimal
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organizationId Int
+  transactions   Transaction[]
 }
 
 model Transaction {
-    id               Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-    wallet           Wallet   @relation(fields: [walletId], references: [id])
-    walletId         Int
-    entryDateTime    DateTime
-    spendDateTime    DateTime
-    transactionValue Decimal
+  wallet           Wallet   @relation(fields: [walletId], references: [id])
+  walletId         Int
+  entryDateTime    DateTime
+  spendDateTime    DateTime
+  transactionValue Decimal
 
-    creator          User     @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
-    creatorUsername  String
-    reviewer         User?    @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
-    reviewerUsername String?
+  creator          User    @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
+  creatorUsername  String
+  reviewer         User?   @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
+  reviewerUsername String?
 }

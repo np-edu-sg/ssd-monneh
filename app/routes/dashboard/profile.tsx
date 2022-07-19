@@ -26,7 +26,6 @@ import {
     requireUser,
     updatePassword,
 } from '~/utils/session.server'
-import type { User } from '@prisma/client'
 import { db } from '~/utils/db.server'
 import * as z from 'zod'
 import { message, regex } from '~/utils/password-requirements'
