@@ -39,19 +39,6 @@ interface LoaderData {
 
 export const loader: LoaderFunction = async ({ request, params }) => {
     const user = await requireUser(request)
-    const { organizationId } = params
-    if (organizationId) {
-        try {
-            const organization = await db.organization.findUnique({
-                where: { id: parseInt(organizationId) },
-            })
-            if (!organization) {
-                return redirect('/dashboard')
-            }
-        } catch {
-            return redirect('/dashboard')
-        }
-    }
 
     const organizations = await db.organizationToUser.findMany({
         include: {

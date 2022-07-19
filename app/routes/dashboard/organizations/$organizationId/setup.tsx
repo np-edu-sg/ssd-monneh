@@ -1,6 +1,8 @@
+import type { ThrownResponse } from '@remix-run/react'
 import {
     Form,
     useActionData,
+    useCatch,
     useLoaderData,
     useSubmit,
     useTransition,
@@ -16,15 +18,21 @@ import {
     Avatar,
     Button,
     Card,
+    Center,
     Group,
     ScrollArea,
     Select,
+    Stack,
     Table,
     Text,
 } from '@mantine/core'
 import { randomId } from '@mantine/hooks'
 import { Plus, Trash } from 'tabler-icons-react'
-import type { ActionFunction, LoaderFunction } from '@remix-run/node'
+import type {
+    ActionFunction,
+    LoaderFunction,
+    ErrorBoundaryComponent,
+} from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import { requireUser } from '~/utils/session.server'
 import { db } from '~/utils/db.server'
@@ -36,6 +44,7 @@ import {
 } from '~/utils/authorization.server'
 import { Role } from '~/utils/roles'
 import { showNotification } from '@mantine/notifications'
+import invariant from 'tiny-invariant'
 
 enum Action {
     UserSearch = 'user-search',
@@ -197,15 +206,14 @@ interface LoaderData {
     }[]
 }
 
+type OrganizationNotFoundError = ThrownResponse<404, string>
+type ThrownResponses = OrganizationNotFoundError
+
 export const loader: LoaderFunction = async ({ request, params }) => {
+    invariant(params.organizationId, 'Expected params.organizationId')
     const { username } = await requireUser(request)
 
-    // This is just to satisfy Typescript. The `dashboard.tsx` layout should already check for this
-    if (!params.organizationId)
-        throw json('Organization ID is required', { status: 400 })
-
-    const organizationId = parseInt(params.organizationId)
-
+    const organizationId = parseInt(params.organizationId) || 0
     await requireAuthorization(
         username,
         organizationId,
@@ -503,5 +511,49 @@ export default function OrganizationSetupPage() {
                 </Group>
             </Form>
         </div>
+    )
+}
+
+export function CatchBoundary() {
+    const error = useCatch<ThrownResponses>()
+
+    return (
+        <Center
+            component={'section'}
+            sx={(theme) => ({
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
+                        : theme.colors.red[4],
+                height: '100%',
+            })}
+        >
+            <Text weight={600} size={'xl'}>
+                {error.status} {error.data}
+            </Text>
+        </Center>
+    )
+}
+
+export const ErrorBoundary: ErrorBoundaryComponent = ({ error }) => {
+    return (
+        <Center
+            p={'lg'}
+            component={'section'}
+            sx={(theme) => ({
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
+                        : theme.colors.red[4],
+                height: '100%',
+            })}
+        >
+            <Stack>
+                <Text weight={600} size={'xl'}>
+                    {error.name}
+                </Text>
+                <Text>{error.message}</Text>
+            </Stack>
+        </Center>
     )
 }
