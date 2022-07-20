@@ -3,6 +3,7 @@ import {
     ActionIcon,
     AppShell,
     Avatar,
+    Box,
     Burger,
     Button,
     Center,
@@ -26,7 +27,7 @@ import {
 } from '@remix-run/react'
 import { MoonStars, Sun } from 'tabler-icons-react'
 import type { LoaderFunction } from '@remix-run/node'
-import { json, redirect } from '@remix-run/node'
+import { json } from '@remix-run/node'
 
 import { db } from '~/utils/db.server'
 import type { UserSessionData } from '~/utils/session.server'
@@ -82,7 +83,7 @@ export default function DashboardLayout() {
     return (
         <AppShell
             fixed
-            padding={'xl'}
+            padding={'md'}
             navbarOffsetBreakpoint={'sm'}
             asideOffsetBreakpoint={'sm'}
             styles={{
@@ -256,7 +257,16 @@ export default function DashboardLayout() {
                 </Navbar>
             }
         >
-            <Outlet />
+            <Box
+                sx={(theme) => ({
+                    [theme.fn.smallerThan('sm')]: {
+                        padding: 0,
+                    },
+                    padding: theme.spacing.sm,
+                })}
+            >
+                <Outlet />
+            </Box>
         </AppShell>
     )
 }
