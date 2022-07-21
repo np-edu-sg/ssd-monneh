@@ -3,12 +3,16 @@ import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
 import type { LoaderFunction, ErrorBoundaryComponent } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import {
+    Aside,
+    Avatar,
     Badge,
     Box,
     Button,
     Card,
     Center,
+    Grid,
     Group,
+    MediaQuery,
     SimpleGrid,
     Stack,
     Text,
@@ -31,6 +35,13 @@ interface LoaderData {
             name: string
             balance: number
         }[]
+        users: {
+            user: {
+                username: string
+                firstName: string
+                lastName: string
+            }
+        }[]
     }
 }
 
@@ -47,6 +58,17 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const organization = await db.organization.findUnique({
         include: {
             wallets: true,
+            users: {
+                include: {
+                    user: {
+                        select: {
+                            username: true,
+                            firstName: true,
+                            lastName: true,
+                        },
+                    },
+                },
+            },
         },
         where: {
             id,
@@ -83,27 +105,21 @@ function WalletCard({ id, name, balance }: WalletCardProps) {
         <UnstyledButton
             component={NavLink}
             to={`/dashboard/organizations/${organizationId}/wallets/${id}`}
-            p={'md'}
-            sx={(theme) => ({
-                borderRadius: theme.radius.sm,
-                backgroundColor:
-                    theme.colorScheme === 'dark'
-                        ? theme.colors.gray[9]
-                        : theme.colors.gray[0],
-            })}
         >
-            <Group position={'apart'}>
-                <Text size={'lg'} weight={600}>
-                    {name}
-                </Text>
+            <Card p={'md'}>
+                <Group position={'apart'}>
+                    <Text size={'lg'} weight={600}>
+                        {name}
+                    </Text>
 
-                <Group>
-                    <Badge size={'lg'} radius={'sm'}>
-                        {formattedBalance}
-                    </Badge>
-                    <ChevronRight />
+                    <Group>
+                        <Badge size={'lg'} radius={'sm'}>
+                            {formattedBalance}
+                        </Badge>
+                        <ChevronRight />
+                    </Group>
                 </Group>
-            </Group>
+            </Card>
         </UnstyledButton>
     )
 }
@@ -113,52 +129,65 @@ export default function OrganizationPage() {
 
     return (
         <div>
-            <Text weight={600} component={'h1'} size={'xl'}>
-                {organization.name}
-            </Text>
-            <br />
-            <SimpleGrid
-                cols={2}
-                spacing={'md'}
-                breakpoints={[{ maxWidth: 'md', cols: 1, spacing: 'xl' }]}
-            >
-                <Stack align={'start'}>
+            <Stack>
+                <Group position={'apart'}>
                     <Text size={'xl'} weight={600}>
                         Wallets
                     </Text>
-                    {organization.wallets.length === 0 ? (
-                        <>
-                            <Text>You have no wallets!</Text>
-                            <Button
-                                color={'cyan'}
-                                variant={'outline'}
-                                component={NavLink}
-                                to={`/dashboard/organizations/${organization.id}/wallets/new`}
-                            >
-                                Add wallet
-                            </Button>
-                        </>
-                    ) : (
-                        organization.wallets.map((params) => (
-                            <WalletCard {...params} key={params.id} />
-                        ))
-                    )}
-                </Stack>
-
-                <Card>
-                    <Stack
-                        sx={(theme) => ({
-                            [theme.fn.largerThan('md')]: {
-                                alignItems: 'flex-end',
-                            },
-                        })}
+                    <Button
+                        color={'cyan'}
+                        variant={'outline'}
+                        component={NavLink}
+                        to={`/dashboard/organizations/${organization.id}/wallets/new`}
                     >
-                        <Text size={'xl'} weight={600}>
-                            Team members
-                        </Text>
+                        Add wallet
+                    </Button>
+                </Group>
+                {organization.wallets.length === 0 ? (
+                    <>
+                        <Text>You have no wallets!</Text>
+                    </>
+                ) : (
+                    organization.wallets.map((params) => (
+                        <WalletCard {...params} key={params.id} />
+                    ))
+                )}
+            </Stack>
+
+            <MediaQuery smallerThan={'sm'} styles={{ display: 'none' }}>
+                <Aside
+                    p={'md'}
+                    hiddenBreakpoint={'sm'}
+                    width={{ sm: 200, lg: 300 }}
+                >
+                    <Stack spacing={'sm'}>
+                        <Text weight={600}>Members</Text>
+                        <Stack spacing={'md'}>
+                            {organization.users.map(
+                                ({
+                                    user: { username, firstName, lastName },
+                                }) => (
+                                    <Group key={username}>
+                                        <Avatar size={30} color={'blue'}>
+                                            {username[0]}
+                                        </Avatar>
+                                        <Text
+                                            component={'span'}
+                                            style={{
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {firstName} {lastName}
+                                        </Text>
+                                    </Group>
+                                )
+                            )}
+                        </Stack>
                     </Stack>
-                </Card>
-            </SimpleGrid>
+                </Aside>
+            </MediaQuery>
         </div>
     )
 }

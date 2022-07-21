@@ -42,6 +42,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const user = await requireUser(request)
 
     const organizations = await db.organizationToUser.findMany({
+        where: {
+            username: user.username,
+        },
         include: {
             organization: {
                 select: {
@@ -50,10 +53,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
                 },
             },
         },
-        where: {
-            username: user.username,
-        },
     })
+
     return json<LoaderData>({
         organizations: organizations.map(({ organization }) => organization),
         user,
@@ -85,7 +86,6 @@ export default function DashboardLayout() {
             fixed
             padding={'md'}
             navbarOffsetBreakpoint={'sm'}
-            asideOffsetBreakpoint={'sm'}
             styles={{
                 root: {
                     height: '100vh',
