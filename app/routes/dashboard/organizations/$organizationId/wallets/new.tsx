@@ -150,6 +150,7 @@ export default function NewWalletPage() {
                                       )
                                     : '$ '
                             }
+                            {...form.getInputProps('balance')}
                         />
                     </SimpleGrid>
 
