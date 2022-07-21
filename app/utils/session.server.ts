@@ -1,5 +1,5 @@
 import { randomBytes, scrypt } from 'node:crypto'
-import { createCookieSessionStorage, json, redirect } from '@remix-run/node'
+import { createCookieSessionStorage, redirect } from '@remix-run/node'
 
 import { db } from './db.server'
 

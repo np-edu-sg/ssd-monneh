@@ -1,8 +1,8 @@
 import { AppShell, Button, Center, Header, Text } from '@mantine/core'
 import { NavLink, Outlet, useLoaderData, useNavigate } from '@remix-run/react'
+import type { LoaderFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { getUserSession } from '~/utils/session.server'
-import type { LoaderFunction } from '@remix-run/node'
 
 interface LoaderData {
     isAuthenticated: boolean

@@ -1,4 +1,5 @@
 import {
+    Anchor,
     Button,
     NumberInput,
     SimpleGrid,
@@ -6,7 +7,14 @@ import {
     Text,
     TextInput,
 } from '@mantine/core'
-import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
+import {
+    Form,
+    NavLink,
+    useActionData,
+    useParams,
+    useSubmit,
+    useTransition,
+} from '@remix-run/react'
 import { useForm } from '@mantine/form'
 import type { ActionFunction, LoaderFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
@@ -92,6 +100,7 @@ export default function NewWalletPage() {
     const submit = useSubmit()
     const data = useActionData()
     const transition = useTransition()
+    const { organizationId } = useParams()
 
     const form = useForm({
         initialValues: {
@@ -102,10 +111,15 @@ export default function NewWalletPage() {
 
     return (
         <div>
+            <Anchor
+                component={NavLink}
+                to={`/dashboard/organizations/${organizationId}`}
+            >
+                {'<'} Back to organization
+            </Anchor>
             <Text weight={600} size={'xl'} component={'h1'}>
                 Create your wallet
             </Text>
-
             <Form
                 onSubmit={form.onSubmit(async ({ name, balance }) => {
                     submit(

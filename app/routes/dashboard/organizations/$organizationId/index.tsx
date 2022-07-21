@@ -1,19 +1,16 @@
 import type { ThrownResponse } from '@remix-run/react'
 import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
-import type { LoaderFunction, ErrorBoundaryComponent } from '@remix-run/node'
+import type { LoaderFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import {
     Aside,
     Avatar,
     Badge,
-    Box,
     Button,
     Card,
     Center,
-    Grid,
     Group,
     MediaQuery,
-    SimpleGrid,
     Stack,
     Text,
     UnstyledButton,
