@@ -258,6 +258,9 @@ export default function DashboardLayout() {
             }
         >
             <Box
+                style={{
+                    height: '100%',
+                }}
                 sx={(theme) => ({
                     [theme.fn.smallerThan('sm')]: {
                         padding: 0,

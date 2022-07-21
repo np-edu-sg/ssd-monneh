@@ -139,7 +139,9 @@ export default function OrganizationPage() {
                             </Button>
                         </>
                     ) : (
-                        organization.wallets.map(() => <></>)
+                        organization.wallets.map((params) => (
+                            <WalletCard {...params} key={params.id} />
+                        ))
                     )}
                 </Stack>
 
