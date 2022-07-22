@@ -82,3 +82,5 @@ export default function App() {
         </html>
     )
 }
+
+// TODO - root error boundary

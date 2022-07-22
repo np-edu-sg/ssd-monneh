@@ -31,22 +31,20 @@ export const action: ActionFunction = async ({ request }) => {
         })
     }
 
-    return db.$transaction(async (prisma) => {
-        const { id } = await prisma.organization.create({
-            data: {
-                name: result.data.name,
-                completedSetup: false,
-                users: {
-                    create: {
-                        role: Role.Owner,
-                        username,
-                    },
+    const { id } = await db.organization.create({
+        data: {
+            name: result.data.name,
+            completedSetup: false,
+            users: {
+                create: {
+                    role: Role.Owner,
+                    username,
                 },
             },
-        })
-
-        return redirect(`/dashboard/organizations/${id}`)
+        },
     })
+
+    return redirect(`/dashboard/organizations/${id}`)
 }
 
 export default function NewOrganization() {

@@ -42,6 +42,8 @@ import {
 } from '~/utils/authorization.server'
 import { Role } from '~/utils/roles'
 
+import { Prisma } from '@prisma/client'
+
 enum Action {
     UserSearch = 'user-search',
     AddMembers = 'add-members',
@@ -157,26 +159,54 @@ export const action: ActionFunction = async ({ request, params }) => {
 
             await db.$transaction(async (prisma) => {
                 await Promise.all(
-                    result.data.members.map(({ username, role }) =>
-                        prisma.organizationToUser.upsert({
-                            where: {
-                                organizationId_username: {
-                                    organizationId,
-                                    username,
+                    result.data.members.map(async ({ username, role }) => {
+                        try {
+                            await prisma.organizationToUser.upsert({
+                                where: {
+                                    organizationId_username: {
+                                        organizationId,
+                                        username,
+                                    },
                                 },
-                            },
-                            update: {
-                                role,
-                                username,
-                                organizationId,
-                            },
-                            create: {
-                                role,
-                                username,
-                                organizationId,
-                            },
-                        })
-                    )
+                                update: {
+                                    role,
+                                    organization: {
+                                        connect: {
+                                            id: organizationId,
+                                        },
+                                    },
+                                    user: {
+                                        connect: {
+                                            username,
+                                        },
+                                    },
+                                },
+                                create: {
+                                    role,
+                                    organization: {
+                                        connect: {
+                                            id: organizationId,
+                                        },
+                                    },
+                                    user: {
+                                        connect: {
+                                            username,
+                                        },
+                                    },
+                                },
+                            })
+                        } catch (e) {
+                            if (
+                                e instanceof
+                                Prisma.PrismaClientKnownRequestError
+                            ) {
+                                // P2025 refers to user not found, which we silently fail
+                                if (e.code !== 'P2025') {
+                                    throw e
+                                }
+                            }
+                        }
+                    })
                 )
 
                 await prisma.organization.update({
