@@ -5,8 +5,27 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
-import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
-import { Anchor, Center, Text } from '@mantine/core'
+import {
+    Form,
+    NavLink,
+    useCatch,
+    useLoaderData,
+    useParams,
+} from '@remix-run/react'
+import {
+    Anchor,
+    Card,
+    Center,
+    Grid,
+    Group,
+    SegmentedControl,
+    SimpleGrid,
+    Stack,
+    Text,
+} from '@mantine/core'
+import { useFormattedCurrency } from '~/hooks/formatter'
+import { useForm } from '@mantine/form'
+import { useMemo } from 'react'
 
 interface LoaderData {
     wallet: {
@@ -49,18 +68,53 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 export default function WalletPage() {
     const { organizationId } = useParams()
     const data = useLoaderData<LoaderData>()
+    const formattedBalance = useFormattedCurrency(data.wallet.balance)
+
+    const form = useForm({
+        initialValues: {
+            type: 'in',
+        },
+    })
+
+    const segmentedControlColor = useMemo(
+        () => (form.values.type === 'in' ? 'green' : 'red'),
+        [form.values.type]
+    )
 
     return (
         <div>
-            <Anchor
-                component={NavLink}
-                to={`/dashboard/organizations/${organizationId}`}
-            >
-                {'<'} Back to organization
-            </Anchor>
-            <Text weight={600} size={'xl'} component={'h1'}>
-                {data.wallet.name}
-            </Text>
+            <Grid>
+                <Grid.Col span={12} md={9}>
+                    <Stack>
+                        <Text weight={600} size={'xl'}>
+                            New transaction
+                        </Text>
+
+                        <Form onSubmit={form.onSubmit((values) => {})}>
+                            <Group>
+                                <Text>Transaction type:</Text>
+                                <SegmentedControl
+                                    data={[
+                                        { label: 'Incoming', value: 'in' },
+                                        { label: 'Outgoing', value: 'out' },
+                                    ]}
+                                    color={segmentedControlColor}
+                                    {...form.getInputProps('type')}
+                                />
+                            </Group>
+                        </Form>
+                    </Stack>
+                </Grid.Col>
+
+                <Grid.Col span={12} md={3}>
+                    <Card>
+                        <Text color={'dimmed'}>Balance</Text>
+                        <Text size={'xl'} weight={600}>
+                            {formattedBalance}
+                        </Text>
+                    </Card>
+                </Grid.Col>
+            </Grid>
         </div>
     )
 }

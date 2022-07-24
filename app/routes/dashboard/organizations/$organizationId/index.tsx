@@ -21,6 +21,7 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import { useMemo } from 'react'
 import { ChevronRight } from 'tabler-icons-react'
+import { useFormattedCurrency } from '~/hooks/formatter'
 
 interface LoaderData {
     organization: {
@@ -87,14 +88,9 @@ interface WalletCardProps {
     balance: number
 }
 
-const formatter = new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'SGD',
-})
-
 function WalletCard({ id, name, balance }: WalletCardProps) {
     const { organizationId } = useParams()
-    const formattedBalance = useMemo(() => formatter.format(balance), [balance])
+    const formattedBalance = useFormattedCurrency(balance)
 
     invariant(organizationId, 'Expected organizationId')
 
