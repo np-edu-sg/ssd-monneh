@@ -15,7 +15,6 @@ import type { SelectItemProps } from '@mantine/core'
 import {
     ActionIcon,
     Autocomplete,
-    Avatar,
     Button,
     Card,
     Center,
@@ -43,6 +42,8 @@ import {
 import { Role } from '~/utils/roles'
 
 import { Prisma } from '@prisma/client'
+import type { AutoCompleteFilter } from '~/components'
+import { AutoCompleteItem } from '~/components'
 
 enum Action {
     UserSearch = 'user-search',
@@ -269,30 +270,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     })
 }
 
-type AutocompleteFilter = (
-    value: string,
-    item: { value: string; label: string }
-) => boolean
-
-const AutoCompleteItem = forwardRef<HTMLDivElement, SelectItemProps>(
-    ({ label, value, ...others }: SelectItemProps, ref) => (
-        <div ref={ref} {...others}>
-            <Group noWrap>
-                <Avatar color={'violet'} size={'sm'}>
-                    {value && value.length > 0 ? value[0] : 'U'}
-                </Avatar>
-
-                <div>
-                    <Text>{label}</Text>
-                    <Text size={'xs'} color={'dimmed'}>
-                        @{value}
-                    </Text>
-                </div>
-            </Group>
-        </div>
-    )
-)
-
 interface ItemProps extends SelectItemProps, ComponentPropsWithoutRef<'div'> {
     description: string
 }
@@ -378,7 +355,7 @@ export default function OrganizationSetupPage() {
         { wait: 300 }
     )
 
-    const autocompleteFilter: (idx: number) => AutocompleteFilter = useCallback(
+    const autocompleteFilter: (idx: number) => AutoCompleteFilter = useCallback(
         (idx) =>
             (_, { value }) => {
                 return (

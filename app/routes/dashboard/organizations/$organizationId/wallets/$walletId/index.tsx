@@ -1,4 +1,4 @@
-import type { LoaderFunction } from '@remix-run/node'
+import type { ActionFunction, LoaderFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
@@ -7,25 +7,82 @@ import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
 import {
     Form,
-    NavLink,
+    useActionData,
     useCatch,
     useLoaderData,
-    useParams,
+    useSubmit,
 } from '@remix-run/react'
 import {
-    Anchor,
+    Autocomplete,
+    Button,
     Card,
     Center,
     Grid,
     Group,
+    NumberInput,
     SegmentedControl,
-    SimpleGrid,
     Stack,
     Text,
 } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { useForm } from '@mantine/form'
 import { useMemo } from 'react'
+import { DatePicker } from '@mantine/dates'
+import { AutoCompleteItem } from '~/components'
+import { useDebounceFn } from 'ahooks'
+
+enum Action {
+    UserSearch = 'user-search',
+}
+
+interface UserSearchActionData {
+    readonly action: Action.UserSearch
+    users: { label: string; value: string }[]
+}
+
+type ActionData = UserSearchActionData
+
+export const action: ActionFunction = async ({ request, params }) => {
+    const { username } = await requireUser(request)
+
+    const formData = await request.formData()
+    const action = formData.get('action')
+
+    switch (action) {
+        case Action.UserSearch: {
+            const search = formData.get('search')
+            if (!search || typeof search !== 'string') {
+                return json<ActionData>({
+                    action: Action.UserSearch,
+                    users: [],
+                })
+            }
+
+            const data = await db.user.findMany({
+                select: { username: true, firstName: true, lastName: true },
+                where: {
+                    OR: {
+                        username: { search },
+                        firstName: { search },
+                        lastName: { search },
+                        email: { search },
+                    },
+                    NOT: {
+                        username,
+                    },
+                },
+            })
+
+            return json<ActionData>({
+                action: Action.UserSearch,
+                users: data.map(({ firstName, lastName, username }) => ({
+                    label: `${firstName} ${lastName}`,
+                    value: username,
+                })),
+            })
+        }
+    }
+}
 
 interface LoaderData {
     wallet: {
@@ -66,13 +123,17 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 }
 
 export default function WalletPage() {
-    const { organizationId } = useParams()
+    const submit = useSubmit()
     const data = useLoaderData<LoaderData>()
+    const actionData = useActionData<ActionData>()
     const formattedBalance = useFormattedCurrency(data.wallet.balance)
 
     const form = useForm({
         initialValues: {
             type: 'in',
+            spendDateTime: new Date(),
+            transactionValue: 0,
+            reviewer: '',
         },
     })
 
@@ -80,6 +141,18 @@ export default function WalletPage() {
         () => (form.values.type === 'in' ? 'green' : 'red'),
         [form.values.type]
     )
+
+    const { run: runSearch } = useDebounceFn(
+        (search: string) => {
+            submit({ search, action: Action.UserSearch }, { method: 'post' })
+        },
+        { wait: 300 }
+    )
+
+    const handleAutocompleteChange = (value: string) => {
+        form.setFieldValue('reviewer', value)
+        runSearch(value)
+    }
 
     return (
         <div>
@@ -91,17 +164,78 @@ export default function WalletPage() {
                         </Text>
 
                         <Form onSubmit={form.onSubmit((values) => {})}>
-                            <Group>
-                                <Text>Transaction type:</Text>
-                                <SegmentedControl
-                                    data={[
-                                        { label: 'Incoming', value: 'in' },
-                                        { label: 'Outgoing', value: 'out' },
-                                    ]}
-                                    color={segmentedControlColor}
-                                    {...form.getInputProps('type')}
+                            <Stack spacing={'sm'} align={'start'}>
+                                <NumberInput
+                                    size={'xl'}
+                                    variant={'unstyled'}
+                                    precision={2}
+                                    min={1}
+                                    max={data.wallet.balance}
+                                    step={0.05}
+                                    sx={(theme) => ({
+                                        paddingTop: theme.spacing.sm,
+                                        paddingBottom: theme.spacing.sm,
+                                        paddingLeft: theme.spacing.md,
+                                        paddingRight: theme.spacing.md,
+                                        borderRadius: theme.radius.md,
+                                        borderColor:
+                                            theme.colorScheme === 'dark'
+                                                ? theme.colors.dark[6]
+                                                : theme.colors.gray[2],
+                                        borderStyle: 'solid',
+                                        borderWidth: 2,
+                                    })}
+                                    parser={(value) =>
+                                        (value ?? '$ 0').replace(
+                                            /\$\s?|(,*)/g,
+                                            ''
+                                        )
+                                    }
+                                    formatter={(value) =>
+                                        !Number.isNaN(parseFloat(value ?? '0'))
+                                            ? `$ ${value}`.replace(
+                                                  /\B(?=(\d{3})+(?!\d))/g,
+                                                  ','
+                                              )
+                                            : '$ '
+                                    }
+                                    {...form.getInputProps('transactionValue')}
                                 />
-                            </Group>
+
+                                <DatePicker
+                                    label={'Spend date'}
+                                    {...form.getInputProps('spendDateTime')}
+                                />
+
+                                <Autocomplete
+                                    label={'Reviewer'}
+                                    placeholder={'Username or email'}
+                                    itemComponent={AutoCompleteItem}
+                                    data={
+                                        actionData?.action === Action.UserSearch
+                                            ? actionData.users
+                                            : []
+                                    }
+                                    {...form.getInputProps('reviewer')}
+                                    onChange={handleAutocompleteChange}
+                                />
+
+                                <Group>
+                                    <Text>Transaction type:</Text>
+                                    <SegmentedControl
+                                        data={[
+                                            { label: 'Incoming', value: 'in' },
+                                            { label: 'Outgoing', value: 'out' },
+                                        ]}
+                                        color={segmentedControlColor}
+                                        {...form.getInputProps('type')}
+                                    />
+                                </Group>
+
+                                <Button type={'submit'}>
+                                    Create transaction
+                                </Button>
+                            </Stack>
                         </Form>
                     </Stack>
                 </Grid.Col>
