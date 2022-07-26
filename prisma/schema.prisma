@@ -37,7 +37,7 @@ model Organization {
 
 model User {
   username             String               @id @db.VarChar(32)
-  email                String
+  email                String               @unique
   firstName            String               @db.VarChar(32)
   lastName             String               @db.VarChar(32)
   passwordHash         String
