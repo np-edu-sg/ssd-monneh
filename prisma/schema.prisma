@@ -75,6 +75,7 @@ model Transaction {
   entryDateTime    DateTime
   spendDateTime    DateTime
   transactionValue Decimal
+  notes            String
 
   creator          User    @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
   creatorUsername  String
