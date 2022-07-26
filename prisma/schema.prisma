@@ -27,7 +27,7 @@ model Audit {
 model Organization {
   id Int @id @default(autoincrement())
 
-  name           String
+  name           String  @db.VarChar(32)
   completedSetup Boolean
 
   audits  Audit[]
@@ -36,10 +36,10 @@ model Organization {
 }
 
 model User {
-  username             String               @id
+  username             String               @id @db.VarChar(32)
   email                String
-  firstName            String
-  lastName             String
+  firstName            String               @db.VarChar(32)
+  lastName             String               @db.VarChar(32)
   passwordHash         String
   reviewedTransactions Transaction[]        @relation("ReviewedTransactions")
   createdTransactions  Transaction[]        @relation("CreatedTransactions")
