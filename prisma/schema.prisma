@@ -76,9 +76,10 @@ model Transaction {
   spendDateTime    DateTime
   transactionValue Decimal
   notes            String
+  approved         Boolean
 
   creator          User    @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
   creatorUsername  String
-  reviewer         User?   @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
-  reviewerUsername String?
+  reviewer         User   @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
+  reviewerUsername String
 }
