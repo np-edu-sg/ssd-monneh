@@ -328,9 +328,14 @@ export default function NewTransactionPage() {
             <Grid>
                 <Grid.Col span={12} md={9}>
                     <Stack>
-                        <Text weight={600} size={'xl'}>
-                            New transaction
-                        </Text>
+                        <div>
+                            <Text size={'xs'} color={'dimmed'}>
+                                {data.wallet.name}
+                            </Text>
+                            <Text weight={600} size={'xl'}>
+                                New transaction
+                            </Text>
+                        </div>
 
                         <Form
                             onSubmit={form.onSubmit((values) => {

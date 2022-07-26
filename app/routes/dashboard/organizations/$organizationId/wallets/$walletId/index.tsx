@@ -6,8 +6,11 @@ import { requireAuthorization } from '~/utils/authorization.server'
 import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
 import { NavLink, useCatch, useLoaderData } from '@remix-run/react'
-import { Card, Center, Group, Stack, Text } from '@mantine/core'
+import { Button, Card, Center, Group, Stack, Text } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
+import { Role } from '~/utils/roles'
+import { randomId } from '@mantine/hooks'
+import { Plus } from 'tabler-icons-react'
 
 interface LoaderData {
     wallet: {
@@ -99,9 +102,19 @@ export default function WalletPage() {
                 {data.wallet.name}
             </Text>
 
-            <Text size={'xl'} weight={600}>
-                Recent transactions
-            </Text>
+            <Group position={'apart'}>
+                <Text size={'xl'} weight={600}>
+                    Recent transactions
+                </Text>
+
+                <Button
+                    component={NavLink}
+                    to={'./transactions/new'}
+                    variant={'outline'}
+                >
+                    <Plus size={20} />
+                </Button>
+            </Group>
 
             <br />
 
