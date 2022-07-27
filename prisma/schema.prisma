@@ -59,16 +59,17 @@ model OrganizationToUser {
 }
 
 model Wallet {
-  id             Int           @id @default(autoincrement())
-  name           String
-  balance        Decimal
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  organizationId Int
-  transactions   Transaction[]
+  id               Int           @id @default(autoincrement())
+  name             String
+  balance          Decimal
+  transactionCount Int           @default(0)
+  organization     Organization  @relation(fields: [organizationId], references: [id])
+  organizationId   Int
+  transactions     Transaction[]
 }
 
 model Transaction {
-  id Int @id @default(autoincrement())
+  id Int
 
   wallet           Wallet   @relation(fields: [walletId], references: [id])
   walletId         Int
@@ -78,8 +79,10 @@ model Transaction {
   notes            String
   approved         Boolean
 
-  creator          User    @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
+  creator          User   @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
   creatorUsername  String
   reviewer         User   @relation("ReviewedTransactions", fields: [reviewerUsername], references: [username])
   reviewerUsername String
+
+  @@id([id, walletId])
 }

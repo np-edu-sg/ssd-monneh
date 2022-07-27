@@ -10,11 +10,14 @@ import {
     useActionData,
     useCatch,
     useLoaderData,
+    useParams,
     useSubmit,
     useTransition,
 } from '@remix-run/react'
 import {
+    Anchor,
     Autocomplete,
+    Breadcrumbs,
     Button,
     Card,
     Center,
@@ -151,9 +154,10 @@ export const action: ActionFunction = async ({ request, params }) => {
             if (!transactionValueResult.success) {
                 return json<ActionData>({
                     action: Action.CreateTransaction,
-                    errors: getValidationErrorObject(
-                        transactionValueResult.error.issues
-                    ),
+                    errors: {
+                        transactionValue:
+                            transactionValueResult.error.format()._errors[0],
+                    },
                 })
             }
 
@@ -164,9 +168,10 @@ export const action: ActionFunction = async ({ request, params }) => {
             if (!spendDateTimeResult.success) {
                 return json<ActionData>({
                     action: Action.CreateTransaction,
-                    errors: getValidationErrorObject(
-                        spendDateTimeResult.error.issues
-                    ),
+                    errors: {
+                        spendDateTime:
+                            spendDateTimeResult.error.format()._errors[0],
+                    },
                 })
             }
 
@@ -217,36 +222,48 @@ export const action: ActionFunction = async ({ request, params }) => {
                 })
             }
 
-            const { id } = await db.transaction.create({
-                data: {
-                    notes,
-                    approved: false,
-                    entryDateTime: new Date(Date.now()),
-                    spendDateTime: new Date(spendDateTimeResult.data),
-                    transactionValue: transactionValueResult.data,
-                    wallet: {
-                        connect: {
-                            id: walletId,
+            return await db.$transaction(async (prisma) => {
+                const { id } = await prisma.transaction.create({
+                    data: {
+                        id: wallet.transactionCount + 1,
+                        notes,
+                        approved: false,
+                        entryDateTime: new Date(Date.now()),
+                        spendDateTime: new Date(spendDateTimeResult.data),
+                        transactionValue: transactionValueResult.data,
+                        wallet: {
+                            connect: {
+                                id: walletId,
+                            },
                         },
-                    },
-                    creator: {
-                        connect: {
-                            username,
+                        creator: {
+                            connect: {
+                                username,
+                            },
                         },
+                        reviewer: reviewer
+                            ? {
+                                  connect: {
+                                      username: reviewer,
+                                  },
+                              }
+                            : {},
                     },
-                    reviewer: reviewer
-                        ? {
-                              connect: {
-                                  username: reviewer,
-                              },
-                          }
-                        : {},
-                },
-            })
+                })
 
-            return redirect(
-                `/dashboard/organizations/${organizationId}/wallets/${walletId}/transactions/${id}`
-            )
+                await prisma.wallet.update({
+                    where: {
+                        id: walletId,
+                    },
+                    data: {
+                        transactionCount: wallet.transactionCount + 1,
+                    },
+                })
+
+                return redirect(
+                    `/dashboard/organizations/${organizationId}/wallets/${walletId}/transactions/${id}`
+                )
+            })
         }
     }
 }
@@ -256,6 +273,9 @@ interface LoaderData {
         id: number
         name: string
         balance: number
+        organization: {
+            name: string
+        }
     }
 }
 
@@ -276,6 +296,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             id: true,
             name: true,
             balance: true,
+            organization: {
+                select: {
+                    name: true,
+                },
+            },
         },
         where: {
             organizationId,
@@ -295,6 +320,7 @@ export default function NewTransactionPage() {
     const data = useLoaderData<LoaderData>()
     const actionData = useActionData<ActionData>()
     const formattedBalance = useFormattedCurrency(data.wallet.balance)
+    const { organizationId, walletId } = useParams()
 
     const form = useForm({
         initialValues: {
@@ -329,9 +355,22 @@ export default function NewTransactionPage() {
                 <Grid.Col span={12} md={9}>
                     <Stack>
                         <div>
-                            <Text size={'xs'} color={'dimmed'}>
-                                {data.wallet.name}
-                            </Text>
+                            <Breadcrumbs>
+                                <Anchor
+                                    href={`/dashboard/organizations/${organizationId}`}
+                                >
+                                    {data.wallet.organization.name}
+                                </Anchor>
+                                <Anchor
+                                    href={`/dashboard/organizations/${organizationId}/wallets/${walletId}`}
+                                >
+                                    {data.wallet.name}
+                                </Anchor>
+                                <Text>New</Text>
+                            </Breadcrumbs>
+
+                            <br />
+
                             <Text weight={600} size={'xl'}>
                                 New transaction
                             </Text>

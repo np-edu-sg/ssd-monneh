@@ -33,6 +33,7 @@ interface LoaderData {
             balance: number
         }[]
         users: {
+            role: string
             user: {
                 username: string
                 firstName: string
@@ -157,6 +158,7 @@ export default function OrganizationPage() {
                         <Stack spacing={'md'}>
                             {organization.users.map(
                                 ({
+                                    role,
                                     user: { username, firstName, lastName },
                                 }) => (
                                     <Group key={username}>
@@ -173,6 +175,8 @@ export default function OrganizationPage() {
                                         >
                                             {firstName} {lastName}
                                         </Text>
+
+                                        <Badge>{role}</Badge>
                                     </Group>
                                 )
                             )}

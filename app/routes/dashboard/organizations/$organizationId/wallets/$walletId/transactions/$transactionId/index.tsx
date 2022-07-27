@@ -30,11 +30,16 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     await requireAuthorization(username, organizationId, () => true)
 
     invariant(params.transactionId, 'Expected params.transactionId')
+    invariant(params.walletId, 'Expected params.walletId')
 
     const transactionId = parseInt(params.transactionId)
+    const walletId = parseInt(params.walletId)
     const transaction = await db.transaction.findUnique({
         where: {
-            id: transactionId,
+            id_walletId: {
+                id: transactionId,
+                walletId,
+            },
         },
         include: {
             wallet: {
@@ -66,7 +71,9 @@ export default function TransactionPage() {
                 <Anchor href={`/dashboard/organizations/${organizationId}`}>
                     {data.transaction.wallet.organization.name}
                 </Anchor>
-                <Anchor href={`/dashboard/organizations/${walletId}`}>
+                <Anchor
+                    href={`/dashboard/organizations/${organizationId}/wallets/${walletId}`}
+                >
                     {data.transaction.wallet.name}
                 </Anchor>
                 <Text>{transactionId}</Text>
