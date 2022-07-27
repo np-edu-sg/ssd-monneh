@@ -208,48 +208,52 @@ export const action: ActionFunction = async ({ request, params }) => {
                 })
             }
 
-            return await db.$transaction(async (prisma) => {
-                const { id } = await prisma.transaction.create({
-                    data: {
-                        id: wallet.transactionCount + 1,
-                        notes,
-                        approved: false,
-                        entryDateTime: new Date(Date.now()),
-                        spendDateTime: result.data.spendDateTime,
-                        transactionValue: transactionValueResult.data,
-                        wallet: {
-                            connect: {
-                                id: walletId,
+            try {
+                return await db.$transaction(async (prisma) => {
+                    const { id } = await prisma.transaction.create({
+                        data: {
+                            id: wallet.transactionCount + 1,
+                            notes,
+                            approved: false,
+                            entryDateTime: new Date(Date.now()),
+                            spendDateTime: result.data.spendDateTime,
+                            transactionValue: transactionValueResult.data,
+                            wallet: {
+                                connect: {
+                                    id: walletId,
+                                },
                             },
-                        },
-                        creator: {
-                            connect: {
-                                username,
+                            creator: {
+                                connect: {
+                                    username,
+                                },
                             },
+                            reviewer: reviewer
+                                ? {
+                                      connect: {
+                                          username: reviewer,
+                                      },
+                                  }
+                                : {},
                         },
-                        reviewer: reviewer
-                            ? {
-                                  connect: {
-                                      username: reviewer,
-                                  },
-                              }
-                            : {},
-                    },
-                })
+                    })
 
-                await prisma.wallet.update({
-                    where: {
-                        id: walletId,
-                    },
-                    data: {
-                        transactionCount: wallet.transactionCount + 1,
-                    },
-                })
+                    await prisma.wallet.update({
+                        where: {
+                            id: walletId,
+                        },
+                        data: {
+                            transactionCount: wallet.transactionCount + 1,
+                        },
+                    })
 
-                return redirect(
-                    `/dashboard/organizations/${organizationId}/wallets/${walletId}/transactions/${id}`
-                )
-            })
+                    return redirect(
+                        `/dashboard/organizations/${organizationId}/wallets/${walletId}/transactions/${id}`
+                    )
+                })
+            } catch (e) {
+                console.error(e)
+            }
         }
     }
 }
