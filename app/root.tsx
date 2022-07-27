@@ -14,6 +14,7 @@ import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import { NotificationsProvider } from '@mantine/notifications'
 
 import stylesheetUrl from './styles.css'
+import { StylesPlaceholder } from '@mantine/remix'
 
 export const meta: MetaFunction = () => ({
     charset: 'utf-8',
@@ -54,32 +55,33 @@ export default function App() {
     useHotkeys([['mod+J', () => toggleColorScheme()]])
 
     return (
-        <html lang={'en'}>
-            <head>
-                <Meta />
-                <Links />
-            </head>
-            <body>
-                <ColorSchemeProvider
-                    colorScheme={colorScheme}
-                    toggleColorScheme={toggleColorScheme}
-                >
-                    <MantineProvider
-                        theme={{ fontFamily: 'Fira Sans', colorScheme }}
-                        withGlobalStyles
-                        withNormalizeCSS
+        <MantineProvider
+            theme={{ fontFamily: 'Fira Sans', colorScheme }}
+            withGlobalStyles
+            withNormalizeCSS
+        >
+            <html lang={'en'}>
+                <head>
+                    <Meta />
+                    <Links />
+                    <StylesPlaceholder />
+                </head>
+                <body>
+                    <ColorSchemeProvider
+                        colorScheme={colorScheme}
+                        toggleColorScheme={toggleColorScheme}
                     >
                         <NotificationsProvider>
                             <Outlet />
                         </NotificationsProvider>
-                    </MantineProvider>
-                </ColorSchemeProvider>
+                    </ColorSchemeProvider>
 
-                <ScrollRestoration />
-                <Scripts />
-                <LiveReload />
-            </body>
-        </html>
+                    <ScrollRestoration />
+                    <Scripts />
+                    <LiveReload />
+                </body>
+            </html>
+        </MantineProvider>
     )
 }
 

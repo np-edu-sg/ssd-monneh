@@ -32,7 +32,7 @@ const createWalletBodySchema = z.object({
 
 const balanceSchema = z
     .number()
-    .min(0, 'Balance must be greater than 0')
+    .gte(0, 'Balance must be greater or equals to 0')
     .step(0.01, 'Balance cannot have more than 2 decimal points')
 
 interface ActionData {

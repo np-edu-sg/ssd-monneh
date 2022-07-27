@@ -7,7 +7,7 @@ import {
     useSubmit,
     useTransition,
 } from '@remix-run/react'
-import { formList, useForm } from '@mantine/form'
+import { useForm } from '@mantine/form'
 import type { ComponentPropsWithoutRef } from 'react'
 import { forwardRef, useCallback, useEffect, useMemo } from 'react'
 import { useDebounceFn } from 'ahooks'
@@ -316,17 +316,13 @@ export default function OrganizationSetupPage() {
 
     const form = useForm({
         initialValues: {
-            members: formList<{
-                username: string
-                role: string
-                key: string
-            }>([
+            members: [
                 {
                     username: '',
                     role: Role.Member,
                     key: randomId(),
                 },
-            ]),
+            ],
         },
 
         validate: {
@@ -368,7 +364,7 @@ export default function OrganizationSetupPage() {
     )
 
     const handleAutocompleteChange = (idx: number) => (value: string) => {
-        form.getListInputProps('members', idx, 'username').onChange(value)
+        form.setFieldValue(`members.${idx}.username`, value)
         runSearch(value)
     }
 
@@ -408,7 +404,7 @@ export default function OrganizationSetupPage() {
                         <Button
                             variant={'outline'}
                             onClick={() => {
-                                form.addListItem('members', {
+                                form.insertListItem('members', {
                                     username: '',
                                     role: Role.Member,
                                     key: randomId(),
@@ -451,18 +447,9 @@ export default function OrganizationSetupPage() {
                                                         ? actionData.users
                                                         : []
                                                 }
-                                                {...form.getListInputProps(
-                                                    'members',
-                                                    idx,
-                                                    'username'
+                                                {...form.getInputProps(
+                                                    `members.${idx}.username`
                                                 )}
-                                                value={
-                                                    form.getListInputProps(
-                                                        'members',
-                                                        idx,
-                                                        'username'
-                                                    ).value
-                                                }
                                                 onChange={handleAutocompleteChange(
                                                     idx
                                                 )}
@@ -472,17 +459,15 @@ export default function OrganizationSetupPage() {
                                             <Select
                                                 data={roles}
                                                 itemComponent={RoleSelectItem}
-                                                {...form.getListInputProps(
-                                                    'members',
-                                                    idx,
-                                                    'role'
+                                                {...form.getInputProps(
+                                                    `members.${idx}.role`
                                                 )}
                                             />
                                         </td>
                                         <td>
                                             <ActionIcon
                                                 color={'red'}
-                                                variant={'hover'}
+                                                variant={'subtle'}
                                                 onClick={() =>
                                                     form.removeListItem(
                                                         'members',

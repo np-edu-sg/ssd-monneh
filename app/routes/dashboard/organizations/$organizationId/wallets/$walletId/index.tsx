@@ -19,6 +19,7 @@ import {
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { Plus } from 'tabler-icons-react'
 import { useMemo } from 'react'
+import type { TransactionState } from '@prisma/client'
 
 interface LoaderData {
     wallet: {
@@ -33,7 +34,7 @@ interface LoaderData {
             spendDateTime: string
             transactionValue: number
             notes: string
-            approved: boolean
+            state: TransactionState
             creatorUsername: string
             reviewerUsername: string
         }[]

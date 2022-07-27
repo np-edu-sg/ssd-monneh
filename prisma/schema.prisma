@@ -68,16 +68,22 @@ model Wallet {
   transactions     Transaction[]
 }
 
+enum TransactionState {
+  Pending
+  Approved
+  Rejected
+}
+
 model Transaction {
   id Int
 
-  wallet           Wallet   @relation(fields: [walletId], references: [id])
+  wallet           Wallet           @relation(fields: [walletId], references: [id])
   walletId         Int
   entryDateTime    DateTime
   spendDateTime    DateTime
   transactionValue Decimal
   notes            String
-  approved         Boolean
+  state            TransactionState @default(Pending)
 
   creator          User   @relation("CreatedTransactions", fields: [creatorUsername], references: [username])
   creatorUsername  String

@@ -31,12 +31,13 @@ import {
 } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { useForm } from '@mantine/form'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { DatePicker } from '@mantine/dates'
 import { AutoCompleteItem } from '~/components'
 import { useDebounceFn } from 'ahooks'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
+import { TransactionState } from '@prisma/client'
 
 enum Action {
     UserSearch = 'user-search',
@@ -84,7 +85,7 @@ const createTransactionBodySchema = (requesterUsername: string) =>
 
 const transactionValueSchema = z
     .number()
-    .min(0, 'Balance must be greater than 0')
+    .gt(0, 'Balance must be greater than 0')
     .step(0.01, 'Balance cannot have more than 2 decimal points')
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -214,7 +215,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                         data: {
                             id: wallet.transactionCount + 1,
                             notes,
-                            approved: false,
+                            state: TransactionState.Pending,
                             entryDateTime: new Date(Date.now()),
                             spendDateTime: result.data.spendDateTime,
                             transactionValue: transactionValueResult.data,
@@ -416,15 +417,15 @@ export default function NewTransactionPage() {
                                               )
                                             : '$ '
                                     }
-                                    error={actionData?.errors?.transactionValue}
                                     {...form.getInputProps('transactionValue')}
+                                    error={actionData?.errors?.transactionValue}
                                 />
 
                                 <DatePicker
                                     label={'Spend date'}
-                                    error={actionData?.errors?.spendDateTime}
                                     maxDate={new Date()}
                                     {...form.getInputProps('spendDateTime')}
+                                    error={actionData?.errors?.spendDateTime}
                                 />
 
                                 <Autocomplete
@@ -436,9 +437,9 @@ export default function NewTransactionPage() {
                                             ? actionData.users
                                             : []
                                     }
-                                    error={actionData?.errors?.reviewer}
                                     {...form.getInputProps('reviewer')}
                                     onChange={handleAutocompleteChange}
+                                    error={actionData?.errors?.reviewer}
                                 />
 
                                 <Textarea
@@ -448,8 +449,8 @@ export default function NewTransactionPage() {
                                     }
                                     autosize
                                     minRows={3}
-                                    error={actionData?.errors?.notes}
                                     {...form.getInputProps('notes')}
+                                    error={actionData?.errors?.notes}
                                 />
 
                                 <Group>
@@ -460,8 +461,8 @@ export default function NewTransactionPage() {
                                             { label: 'Outgoing', value: 'out' },
                                         ]}
                                         color={segmentedControlColor}
-                                        error={actionData?.errors?.type}
                                         {...form.getInputProps('type')}
+                                        error={actionData?.errors?.type}
                                     />
                                 </Group>
 
