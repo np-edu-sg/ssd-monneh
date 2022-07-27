@@ -1,11 +1,4 @@
-import {
-    Box,
-    Button,
-    Container,
-    createStyles,
-    Text,
-    Title,
-} from '@mantine/core'
+import { Button, Container, createStyles, Text, Title } from '@mantine/core'
 import { Dots } from 'tabler-icons-react'
 import { NavLink } from '@remix-run/react'
 

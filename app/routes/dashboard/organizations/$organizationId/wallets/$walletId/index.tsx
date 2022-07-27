@@ -5,17 +5,28 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
-import { NavLink, useCatch, useLoaderData } from '@remix-run/react'
-import { Button, Card, Center, Group, Stack, Text } from '@mantine/core'
+import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
+import {
+    Anchor,
+    Breadcrumbs,
+    Button,
+    Card,
+    Center,
+    Group,
+    Stack,
+    Text,
+} from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
-import { Role } from '~/utils/roles'
-import { randomId } from '@mantine/hooks'
 import { Plus } from 'tabler-icons-react'
+import { useMemo } from 'react'
 
 interface LoaderData {
     wallet: {
         name: string
         balance: number
+        organization: {
+            name: string
+        }
         transactions: {
             id: number
             entryDateTime: string
@@ -49,6 +60,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             transactions: {
                 take: 10,
             },
+            organization: {
+                select: {
+                    name: true,
+                },
+            },
         },
     })
 
@@ -73,20 +89,25 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 }
 
 interface TransactionCardProps {
+    id: number
     entryDateTime: string
     transactionValue: number
 }
 
 function TransactionCard({
+    id,
     entryDateTime,
     transactionValue,
 }: TransactionCardProps) {
     const value = useFormattedCurrency(transactionValue)
+    const dateString = useMemo(() => {
+        return new Date(entryDateTime).toLocaleDateString()
+    }, [entryDateTime])
 
     return (
-        <Card>
+        <Card to={`./transactions/${id}`} component={NavLink}>
             <Group position={'apart'}>
-                <Text>{entryDateTime}</Text>
+                <Text>{dateString}</Text>
                 <Text>{value}</Text>
             </Group>
         </Card>
@@ -94,13 +115,19 @@ function TransactionCard({
 }
 
 export default function WalletPage() {
+    const { organizationId } = useParams()
     const data = useLoaderData<LoaderData>()
 
     return (
         <div>
-            <Text size={'xs'} color={'dimmed'}>
-                {data.wallet.name}
-            </Text>
+            <Breadcrumbs>
+                <Anchor href={`/dashboard/organizations/${organizationId}`}>
+                    {data.wallet.organization.name}
+                </Anchor>
+                <Text>{data.wallet.name}</Text>
+            </Breadcrumbs>
+
+            <br />
 
             <Group position={'apart'}>
                 <Text size={'xl'} weight={600}>
