@@ -145,6 +145,14 @@ export default function OrganizationPage() {
                         <WalletCard {...params} key={params.id} />
                     ))
                 )}
+
+                <Text size={'xl'} weight={600}>
+                    Reviews assigned to you
+                </Text>
+
+                <Text size={'xl'} weight={600}>
+                    Your reviews
+                </Text>
             </Stack>
 
             <MediaQuery smallerThan={'sm'} styles={{ display: 'none' }}>
