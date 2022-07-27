@@ -68,7 +68,9 @@ const createTransactionBodySchema = (requesterUsername: string) =>
     z.object({
         type: z.nativeEnum(TransactionType),
         // Epoch time
-        spendDateTime: z.string().regex(/^\d+$/).transform(Number),
+        spendDateTime: z.string().refine((value) => {
+            return new Date(value) < new Date()
+        }),
         transactionValue: z.string().regex(/^\d+$/).transform(Number),
         reviewer: z
             .string()
@@ -79,8 +81,6 @@ const createTransactionBodySchema = (requesterUsername: string) =>
             ),
         notes: z.string(),
     })
-
-const spendDateTimeSchema = z.number().min(0).max(Date.now())
 
 const transactionValueSchema = z
     .number()
@@ -161,20 +161,6 @@ export const action: ActionFunction = async ({ request, params }) => {
                 })
             }
 
-            const spendDateTimeResult =
-                await spendDateTimeSchema.safeParseAsync(
-                    result.data.spendDateTime
-                )
-            if (!spendDateTimeResult.success) {
-                return json<ActionData>({
-                    action: Action.CreateTransaction,
-                    errors: {
-                        spendDateTime:
-                            spendDateTimeResult.error.format()._errors[0],
-                    },
-                })
-            }
-
             const organizationId = parseInt(params.organizationId)
             await requireAuthorization(
                 username,
@@ -229,7 +215,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                         notes,
                         approved: false,
                         entryDateTime: new Date(Date.now()),
-                        spendDateTime: new Date(spendDateTimeResult.data),
+                        spendDateTime: result.data.spendDateTime,
                         transactionValue: transactionValueResult.data,
                         wallet: {
                             connect: {
@@ -384,9 +370,8 @@ export default function NewTransactionPage() {
                                         action: Action.CreateTransaction,
                                         transactionValue:
                                             values.transactionValue.toString(),
-                                        spendDateTime: values.spendDateTime
-                                            .getTime()
-                                            .toString(),
+                                        spendDateTime:
+                                            values.spendDateTime.toISOString(),
                                     },
                                     { method: 'post' }
                                 )
@@ -434,6 +419,7 @@ export default function NewTransactionPage() {
                                 <DatePicker
                                     label={'Spend date'}
                                     error={actionData?.errors?.spendDateTime}
+                                    maxDate={new Date()}
                                     {...form.getInputProps('spendDateTime')}
                                 />
 

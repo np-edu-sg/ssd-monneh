@@ -3,13 +3,34 @@ import { json } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
-import { Anchor, Breadcrumbs, Text } from '@mantine/core'
+import {
+    Anchor,
+    Avatar,
+    Badge,
+    Breadcrumbs,
+    Button,
+    Group,
+    SimpleGrid,
+    Stack,
+    Text,
+} from '@mantine/core'
 import type { ThrownResponse } from '@remix-run/react'
 import { useLoaderData, useParams } from '@remix-run/react'
 import { db } from '~/utils/db.server'
+import { useFormattedCurrency } from '~/hooks/formatter'
 
 interface LoaderData {
     transaction: {
+        approved: boolean
+        notes: string
+        entryDateTime: string
+        spendDateTime: string
+        transactionValue: number
+        creator: {
+            username: string
+            firstName: string
+            lastName: string
+        }
         wallet: {
             name: string
             organization: {
@@ -52,18 +73,36 @@ export const loader: LoaderFunction = async ({ request, params }) => {
                     },
                 },
             },
+            creator: {
+                select: {
+                    username: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            },
         },
     })
     if (!transaction) {
         throw json('Transaction does not exist', { status: 404 })
     }
 
-    return json<LoaderData>({ transaction })
+    return json<LoaderData>({
+        transaction: {
+            ...transaction,
+            spendDateTime: transaction.spendDateTime.toISOString(),
+            entryDateTime: transaction.spendDateTime.toISOString(),
+            transactionValue: transaction.transactionValue.toNumber(),
+        },
+    })
 }
 
 export default function TransactionPage() {
     const { transactionId, organizationId, walletId } = useParams()
     const data = useLoaderData<LoaderData>()
+
+    const transactionValue = useFormattedCurrency(
+        data.transaction.transactionValue
+    )
 
     return (
         <div>
@@ -78,6 +117,60 @@ export default function TransactionPage() {
                 </Anchor>
                 <Text>{transactionId}</Text>
             </Breadcrumbs>
+
+            <br />
+
+            <Badge
+                size={'md'}
+                color={data.transaction.approved ? 'green' : 'red'}
+            >
+                {data.transaction.approved ? 'Approved' : 'Pending approval'}
+            </Badge>
+
+            <br />
+            <br />
+
+            <SimpleGrid cols={2} breakpoints={[{ cols: 1, maxWidth: 'md' }]}>
+                <Stack spacing={'md'} align={'start'}>
+                    <Text size={'xl'} weight={600}>
+                        {transactionValue}
+                    </Text>
+
+                    {!data.transaction.approved && (
+                        <Button variant={'outline'} color={'green'}>
+                            Approve
+                        </Button>
+                    )}
+                </Stack>
+
+                <Stack spacing={'md'}>
+                    <div>
+                        <Text size={'sm'} color={'dimmed'}>
+                            Notes
+                        </Text>
+                        {data.transaction.notes.length > 0 ? (
+                            <Text>{data.transaction.notes}</Text>
+                        ) : (
+                            <Text>No notes here</Text>
+                        )}
+                    </div>
+
+                    <div>
+                        <Text size={'sm'} color={'dimmed'} mb={'sm'}>
+                            Filed by
+                        </Text>
+                        <Group>
+                            <Avatar color={'violet'} size={'sm'}>
+                                {data.transaction.creator.username[0]}
+                            </Avatar>
+                            <Text>
+                                {data.transaction.creator.firstName}{' '}
+                                {data.transaction.creator.lastName}
+                            </Text>
+                        </Group>
+                    </div>
+                </Stack>
+            </SimpleGrid>
         </div>
     )
 }

@@ -61,7 +61,7 @@ model OrganizationToUser {
 model Wallet {
   id               Int           @id @default(autoincrement())
   name             String
-  balance          Decimal
+  balance          Decimal       @default(0)
   transactionCount Int           @default(0)
   organization     Organization  @relation(fields: [organizationId], references: [id])
   organizationId   Int
