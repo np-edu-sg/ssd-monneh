@@ -69,6 +69,7 @@ export async function register({
     let user = await db.user.findUnique({
         where: {
             username,
+            email,
         },
     })
     if (user) return null

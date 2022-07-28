@@ -48,7 +48,8 @@ export const action: ActionFunction = async ({ request }) => {
         return json<ActionData>(
             {
                 errors: {
-                    username: 'User already exists with this username',
+                    username: 'User already exists with this username or email',
+                    email: 'User already exists with this username or email',
                 },
             },
             { status: 409 }
