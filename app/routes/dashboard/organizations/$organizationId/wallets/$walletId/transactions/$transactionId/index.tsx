@@ -137,7 +137,7 @@ export default function TransactionPage() {
 
     const hasEnoughBalance = useMemo(
         () =>
-            data.transaction.transactionValue >=
+            data.transaction.transactionValue <=
             data.transaction.wallet.balance,
         [data]
     )
