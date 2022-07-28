@@ -9,11 +9,18 @@ import {
 } from '@remix-run/react'
 
 import type { ColorScheme } from '@mantine/core'
-import { ColorSchemeProvider, MantineProvider } from '@mantine/core'
+import {
+    Center,
+    ColorSchemeProvider,
+    MantineProvider,
+    Stack,
+    Text,
+} from '@mantine/core'
 import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import { NotificationsProvider } from '@mantine/notifications'
 
 import stylesheetUrl from './styles.css'
+import type { ErrorBoundaryComponent } from '@remix-run/node'
 
 export const meta: MetaFunction = () => ({
     charset: 'utf-8',
@@ -83,4 +90,25 @@ export default function App() {
     )
 }
 
-// TODO - root error boundary
+export const ErrorBoundary: ErrorBoundaryComponent = ({ error }) => {
+    return (
+        <Center
+            p={'lg'}
+            component={'section'}
+            sx={(theme) => ({
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
+                        : theme.colors.red[4],
+                height: '100%',
+            })}
+        >
+            <Stack>
+                <Text weight={600} size={'xl'}>
+                    {error.name}
+                </Text>
+                <Text>{error.message}</Text>
+            </Stack>
+        </Center>
+    )
+}
