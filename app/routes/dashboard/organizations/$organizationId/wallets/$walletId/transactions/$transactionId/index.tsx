@@ -415,12 +415,21 @@ export default function TransactionPage() {
                                                         This transaction is good
                                                         to go!
                                                     </Text>
-                                                    <Button
-                                                        color={'green'}
-                                                        onClick={approve}
-                                                    >
-                                                        Approve
-                                                    </Button>
+                                                    <Group>
+                                                        <Button
+                                                            color={'red'}
+                                                            variant={'subtle'}
+                                                            onClick={reject}
+                                                        >
+                                                            Reject
+                                                        </Button>
+                                                        <Button
+                                                            color={'green'}
+                                                            onClick={approve}
+                                                        >
+                                                            Approve
+                                                        </Button>
+                                                    </Group>
                                                 </>
                                             ) : (
                                                 <>
