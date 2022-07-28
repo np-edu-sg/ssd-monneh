@@ -6,6 +6,7 @@ import { requireAuthorization } from '~/utils/authorization.server'
 import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
 import {
+    Form,
     NavLink,
     useCatch,
     useLoaderData,
@@ -23,12 +24,24 @@ import {
     Menu,
     Stack,
     Text,
+    TextInput,
 } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { Edit, Plus, Trash } from 'tabler-icons-react'
 import { useMemo } from 'react'
 import type { TransactionState } from '@prisma/client'
 import { useModals } from '@mantine/modals'
+import { useForm } from '@mantine/form'
+import * as z from 'zod'
+import { getValidationErrorObject } from '~/utils/validation.server'
+
+const updateWalletBodySchema = z.object({
+    name: z.string().min(0, 'Name is required'),
+})
+
+interface ActionData {
+    errors?: Record<string, string>
+}
 
 export const action: ActionFunction = async ({ request, params }) => {
     invariant(params.organizationId, 'Expected params.organizationId')
@@ -51,6 +64,36 @@ export const action: ActionFunction = async ({ request, params }) => {
                 },
             })
             return redirect(`/dashboard/organizations/${organizationId}`)
+        }
+
+        case 'PUT': {
+            await requireAuthorization(
+                username,
+                organizationId,
+                (role) => role.allowUpdateWallets
+            )
+
+            const formData = await request.formData()
+
+            const result = await updateWalletBodySchema.safeParseAsync({
+                name: formData.get('name'),
+            })
+            if (!result.success) {
+                return json<ActionData>({
+                    errors: getValidationErrorObject(result.error.issues),
+                })
+            }
+
+            await db.wallet.update({
+                where: {
+                    id: walletId,
+                },
+                data: {
+                    name: result.data.name,
+                },
+            })
+
+            return json({})
         }
     }
 }
@@ -149,6 +192,45 @@ function TransactionCard({
     )
 }
 
+function UpdateWalletName({
+    name,
+    submit,
+}: {
+    name: string
+    close(): void
+    submit(values: { name: string }): void
+}) {
+    const form = useForm({
+        initialValues: {
+            name,
+        },
+
+        validate: {
+            name: (value) => (value.length > 0 ? null : 'Name is required'),
+        },
+    })
+
+    return (
+        <Form>
+            <TextInput
+                placeholder={'Wallet name'}
+                {...form.getInputProps('name')}
+            />
+            <Button
+                mt={'md'}
+                fullWidth
+                type={'submit'}
+                onClick={form.onSubmit((values) => {
+                    submit(values)
+                    close()
+                })}
+            >
+                Update
+            </Button>
+        </Form>
+    )
+}
+
 export default function WalletPage() {
     const modals = useModals()
     const submit = useSubmit()
@@ -176,6 +258,19 @@ export default function WalletPage() {
             onConfirm: () => submit(null, { method: 'delete' }),
         })
 
+    const openUpdateNameModel = () => {
+        const id = modals.openModal({
+            title: 'Update wallet name',
+            children: (
+                <UpdateWalletName
+                    close={() => modals.closeModal(id)}
+                    name={data.wallet.name}
+                    submit={(values) => submit(values, { method: 'put' })}
+                />
+            ),
+        })
+    }
+
     return (
         <div>
             <Group position={'apart'} align={'center'}>
@@ -191,7 +286,12 @@ export default function WalletPage() {
 
                 <Menu>
                     <Menu.Label>Options</Menu.Label>
-                    <Menu.Item icon={<Edit size={14} />}>Edit name</Menu.Item>
+                    <Menu.Item
+                        icon={<Edit size={14} />}
+                        onClick={openUpdateNameModel}
+                    >
+                        Edit name
+                    </Menu.Item>
 
                     <Divider />
 
