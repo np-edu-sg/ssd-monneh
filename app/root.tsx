@@ -14,7 +14,6 @@ import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import { NotificationsProvider } from '@mantine/notifications'
 
 import stylesheetUrl from './styles.css'
-import { StylesPlaceholder } from '@mantine/remix'
 
 export const meta: MetaFunction = () => ({
     charset: 'utf-8',
@@ -55,33 +54,32 @@ export default function App() {
     useHotkeys([['mod+J', () => toggleColorScheme()]])
 
     return (
-        <MantineProvider
-            theme={{ fontFamily: 'Fira Sans', colorScheme }}
-            withGlobalStyles
-            withNormalizeCSS
-        >
-            <html lang={'en'}>
-                <head>
-                    <Meta />
-                    <Links />
-                    <StylesPlaceholder />
-                </head>
-                <body>
-                    <ColorSchemeProvider
-                        colorScheme={colorScheme}
-                        toggleColorScheme={toggleColorScheme}
+        <html lang={'en'}>
+            <head>
+                <Meta />
+                <Links />
+            </head>
+            <body>
+                <ColorSchemeProvider
+                    colorScheme={colorScheme}
+                    toggleColorScheme={toggleColorScheme}
+                >
+                    <MantineProvider
+                        theme={{ fontFamily: 'Fira Sans', colorScheme }}
+                        withGlobalStyles
+                        withNormalizeCSS
                     >
                         <NotificationsProvider>
                             <Outlet />
                         </NotificationsProvider>
-                    </ColorSchemeProvider>
+                    </MantineProvider>
+                </ColorSchemeProvider>
 
-                    <ScrollRestoration />
-                    <Scripts />
-                    <LiveReload />
-                </body>
-            </html>
-        </MantineProvider>
+                <ScrollRestoration />
+                <Scripts />
+                <LiveReload />
+            </body>
+        </html>
     )
 }
 
