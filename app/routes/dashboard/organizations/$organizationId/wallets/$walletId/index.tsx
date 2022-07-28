@@ -1,25 +1,59 @@
-import type { LoaderFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import type { ActionFunction, LoaderFunction } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
-import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
+import {
+    NavLink,
+    useCatch,
+    useLoaderData,
+    useParams,
+    useSubmit,
+} from '@remix-run/react'
 import {
     Anchor,
     Breadcrumbs,
     Button,
     Card,
     Center,
+    Divider,
     Group,
+    Menu,
     Stack,
     Text,
 } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
-import { Plus } from 'tabler-icons-react'
+import { Edit, Plus, Trash } from 'tabler-icons-react'
 import { useMemo } from 'react'
 import type { TransactionState } from '@prisma/client'
+import { useModals } from '@mantine/modals'
+
+export const action: ActionFunction = async ({ request, params }) => {
+    invariant(params.organizationId, 'Expected params.organizationId')
+    invariant(params.walletId, 'Expected params.walletId')
+
+    const { username } = await requireUser(request)
+    const organizationId = parseInt(params.organizationId)
+    const walletId = parseInt(params.walletId)
+
+    switch (request.method) {
+        case 'DELETE': {
+            await requireAuthorization(
+                username,
+                organizationId,
+                (role) => role.allowDeleteWallets
+            )
+            await db.wallet.delete({
+                where: {
+                    id: walletId,
+                },
+            })
+            return redirect(`/dashboard/organizations/${organizationId}`)
+        }
+    }
+}
 
 interface LoaderData {
     wallet: {
@@ -116,20 +150,61 @@ function TransactionCard({
 }
 
 export default function WalletPage() {
+    const modals = useModals()
+    const submit = useSubmit()
     const { organizationId } = useParams()
     const data = useLoaderData<LoaderData>()
 
+    const openConfirmModal = () =>
+        modals.openConfirmModal({
+            title: 'Are you sure?',
+            centered: true,
+            confirmProps: { color: 'red' },
+            children: (
+                <Text size={'sm'}>
+                    Deleting a wallet is permanent!
+                    <br />
+                    <br />
+                    <Text color={'red'} weight={600}>
+                        ALL TRANSACTIONS WILL BE DELETED!
+                        <br />
+                        THIS IS IRREVERSIBLE!
+                    </Text>
+                </Text>
+            ),
+            labels: { confirm: 'Confirm', cancel: 'Cancel' },
+            onConfirm: () => submit(null, { method: 'delete' }),
+        })
+
     return (
         <div>
-            <Breadcrumbs>
-                <Anchor
-                    component={NavLink}
-                    to={`/dashboard/organizations/${organizationId}`}
-                >
-                    {data.wallet.organization.name}
-                </Anchor>
-                <Text>{data.wallet.name}</Text>
-            </Breadcrumbs>
+            <Group position={'apart'} align={'center'}>
+                <Breadcrumbs>
+                    <Anchor
+                        component={NavLink}
+                        to={`/dashboard/organizations/${organizationId}`}
+                    >
+                        {data.wallet.organization.name}
+                    </Anchor>
+                    <Text>{data.wallet.name}</Text>
+                </Breadcrumbs>
+
+                <Menu>
+                    <Menu.Label>Options</Menu.Label>
+                    <Menu.Item icon={<Edit size={14} />}>Edit name</Menu.Item>
+
+                    <Divider />
+
+                    <Menu.Label>Danger zone</Menu.Label>
+                    <Menu.Item
+                        color={'red'}
+                        icon={<Trash size={14} />}
+                        onClick={openConfirmModal}
+                    >
+                        Delete wallet
+                    </Menu.Item>
+                </Menu>
+            </Group>
 
             <br />
 

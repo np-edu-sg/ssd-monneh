@@ -21,6 +21,7 @@ import { NotificationsProvider } from '@mantine/notifications'
 
 import stylesheetUrl from './styles.css'
 import type { ErrorBoundaryComponent } from '@remix-run/node'
+import { ModalsProvider } from '@mantine/modals'
 
 export const meta: MetaFunction = () => ({
     charset: 'utf-8',
@@ -76,9 +77,11 @@ export default function App() {
                         withGlobalStyles
                         withNormalizeCSS
                     >
-                        <NotificationsProvider>
-                            <Outlet />
-                        </NotificationsProvider>
+                        <ModalsProvider>
+                            <NotificationsProvider>
+                                <Outlet />
+                            </NotificationsProvider>
+                        </ModalsProvider>
                     </MantineProvider>
                 </ColorSchemeProvider>
 
