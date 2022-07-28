@@ -3,6 +3,7 @@ import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
 import type { LoaderFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import {
+    ActionIcon,
     Aside,
     Avatar,
     Badge,
@@ -19,7 +20,7 @@ import { db } from '~/utils/db.server'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
-import { ChevronRight } from 'tabler-icons-react'
+import { ChevronRight, Settings } from 'tabler-icons-react'
 import { useFormattedCurrency } from '~/hooks/formatter'
 
 interface LoaderData {
@@ -161,34 +162,40 @@ export default function OrganizationPage() {
                     hiddenBreakpoint={'sm'}
                     width={{ sm: 200, lg: 300 }}
                 >
-                    <Stack spacing={'sm'}>
-                        <Text weight={600}>Members</Text>
-                        <Stack spacing={'md'}>
-                            {organization.users.map(
-                                ({
-                                    role,
-                                    user: { username, firstName, lastName },
-                                }) => (
-                                    <Group key={username}>
-                                        <Avatar size={30} color={'blue'}>
-                                            {username[0]}
-                                        </Avatar>
-                                        <Text
-                                            component={'span'}
-                                            style={{
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {firstName} {lastName}
-                                        </Text>
+                    <Stack justify={'space-between'} style={{ height: '100%' }}>
+                        <Stack spacing={'sm'} justify={'space-between'}>
+                            <Text weight={600}>Members</Text>
+                            <Stack spacing={'md'}>
+                                {organization.users.map(
+                                    ({
+                                        role,
+                                        user: { username, firstName, lastName },
+                                    }) => (
+                                        <Group key={username}>
+                                            <Avatar size={30} color={'blue'}>
+                                                {username[0]}
+                                            </Avatar>
+                                            <Text
+                                                component={'span'}
+                                                style={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {firstName} {lastName}
+                                            </Text>
 
-                                        <Badge>{role}</Badge>
-                                    </Group>
-                                )
-                            )}
+                                            <Badge>{role}</Badge>
+                                        </Group>
+                                    )
+                                )}
+                            </Stack>
                         </Stack>
+
+                        <ActionIcon component={NavLink} to={'./settings'}>
+                            <Settings />
+                        </ActionIcon>
                     </Stack>
                 </Aside>
             </MediaQuery>
