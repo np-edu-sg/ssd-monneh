@@ -8,13 +8,17 @@ import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { requireUser } from '~/utils/session.server'
 import { Role } from '~/utils/roles'
+import { Prisma } from '@prisma/client'
 
 interface ActionData {
     errors?: Record<string, string>
 }
 
 const createOrganizationBodySchema = z.object({
-    name: z.string().min(1, 'Name is required'),
+    name: z
+        .string()
+        .min(1, 'Name is required')
+        .max(32, 'Name must not be longer than 32 characters'),
 })
 
 export const action: ActionFunction = async ({ request }) => {
