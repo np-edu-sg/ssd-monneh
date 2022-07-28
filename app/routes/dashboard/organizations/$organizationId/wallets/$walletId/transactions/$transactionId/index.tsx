@@ -6,7 +6,7 @@
  * Please forgive me Javascript people from above
  */
 
-import type { LoaderFunction } from '@remix-run/node'
+import type { ActionFunction, LoaderFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
@@ -24,11 +24,13 @@ import {
     Text,
 } from '@mantine/core'
 import type { ThrownResponse } from '@remix-run/react'
-import { NavLink, useLoaderData, useParams } from '@remix-run/react'
+import { NavLink, useLoaderData, useParams, useSubmit } from '@remix-run/react'
 import { db } from '~/utils/db.server'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { TransactionState } from '@prisma/client'
 import { useMemo } from 'react'
+import * as z from 'zod'
+import { getValidationErrorObject } from '~/utils/validation.server'
 
 interface LoaderData {
     username: string
@@ -127,9 +129,111 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     })
 }
 
+interface ActionData {
+    errors: Record<string, string>
+}
+
+const approveTransactionBodySchema = z.object({
+    state: z
+        .nativeEnum(TransactionState)
+        .refine((v) => v !== TransactionState.Pending),
+})
+
+export const action: ActionFunction = async ({ request, params }) => {
+    invariant(params.organizationId)
+    invariant(params.walletId)
+    invariant(params.transactionId)
+    const { username } = await requireUser(request)
+
+    const organizationId = parseInt(params.organizationId)
+    await requireAuthorization(
+        username,
+        organizationId,
+        (role) => role.allowApproveTransactions
+    )
+
+    const formData = await request.formData()
+    const walletId = parseInt(params.walletId)
+    const transactionId = parseInt(params.transactionId)
+
+    const result = await approveTransactionBodySchema.safeParseAsync({
+        state: formData.get('state'),
+    })
+
+    if (!result.success) {
+        return json<ActionData>({
+            errors: getValidationErrorObject(result.error.issues),
+        })
+    }
+
+    const transaction = await db.transaction.findUnique({
+        where: {
+            id_walletId: {
+                id: transactionId,
+                walletId,
+            },
+        },
+        include: {
+            wallet: true,
+        },
+    })
+
+    invariant(transaction, 'Expected transaction')
+
+    // Approving or rejecting a transaction is permanent
+    if (transaction.state !== TransactionState.Pending) {
+        return json<ActionData>({
+            errors: {
+                state: 'Transaction state has already been set',
+            },
+        })
+    }
+
+    const balanceAfter =
+        transaction.wallet.balance.toNumber() +
+        transaction.transactionValue.toNumber()
+    if (result.data.state === TransactionState.Approved && balanceAfter < 0) {
+        return json<ActionData>({
+            errors: {
+                '': 'Wallet does not have enough balance to approve this transaction',
+            },
+        })
+    }
+
+    await db.$transaction(async (prisma) => {
+        await prisma.transaction.update({
+            where: {
+                id_walletId: {
+                    id: transactionId,
+                    walletId,
+                },
+            },
+            data: {
+                state: result.data.state,
+            },
+        })
+
+        if (result.data.state === TransactionState.Approved) {
+            await prisma.wallet.update({
+                where: {
+                    id: walletId,
+                },
+                data: {
+                    balance: {
+                        increment: transaction.transactionValue,
+                    },
+                },
+            })
+        }
+    })
+
+    return json({})
+}
+
 export default function TransactionPage() {
-    const { transactionId, organizationId, walletId } = useParams()
+    const submit = useSubmit()
     const data = useLoaderData<LoaderData>()
+    const { transactionId, organizationId, walletId } = useParams()
 
     const transactionValue = useFormattedCurrency(
         data.transaction.transactionValue
@@ -137,14 +241,20 @@ export default function TransactionPage() {
 
     const hasEnoughBalance = useMemo(
         () =>
-            data.transaction.transactionValue <=
-            data.transaction.wallet.balance,
+            data.transaction.wallet.balance +
+                data.transaction.transactionValue >=
+            0,
         [data]
     )
     const hasPermission = useMemo(
         () => data.transaction.reviewer.username === data.username,
         [data]
     )
+
+    const approve = () =>
+        submit({ state: TransactionState.Approved }, { method: 'post' })
+    const reject = () =>
+        submit({ state: TransactionState.Rejected }, { method: 'post' })
 
     return (
         <div>
@@ -166,22 +276,29 @@ export default function TransactionPage() {
 
             <br />
 
-            <Badge
-                size={'lg'}
-                color={
-                    data.transaction.state === TransactionState.Pending
-                        ? 'gray'
+            <Group>
+                <Text size={'lg'} weight={600}>
+                    #{transactionId}
+                </Text>
+
+                <Badge
+                    size={'lg'}
+                    color={
+                        data.transaction.state === TransactionState.Pending
+                            ? 'gray'
+                            : data.transaction.state ===
+                              TransactionState.Approved
+                            ? 'green'
+                            : 'red'
+                    }
+                >
+                    {data.transaction.state === TransactionState.Pending
+                        ? 'Pending approval'
                         : data.transaction.state === TransactionState.Approved
-                        ? 'green'
-                        : 'red'
-                }
-            >
-                {data.transaction.state === TransactionState.Pending
-                    ? 'Pending approval'
-                    : data.transaction.state === TransactionState.Approved
-                    ? 'Approved'
-                    : 'Rejected'}
-            </Badge>
+                        ? 'Approved'
+                        : 'Rejected'}
+                </Badge>
+            </Group>
 
             <SimpleGrid
                 cols={2}
@@ -242,47 +359,95 @@ export default function TransactionPage() {
                     </div>
                 </Stack>
 
-                <Card
-                    p={'lg'}
-                    sx={(theme) => ({
-                        borderStyle: 'solid',
-                        borderWidth: 1,
-                        borderColor: (hasPermission && hasEnoughBalance
-                            ? theme.colors.green
-                            : theme.colors.red)[
-                            theme.colorScheme === 'dark' ? 9 : 4
-                        ],
-                    })}
-                >
-                    {
+                <div>
+                    <Card
+                        p={'lg'}
+                        sx={(theme) => ({
+                            borderStyle: 'solid',
+                            borderWidth: 1,
+                            /**
+                             * Javascript abomination below:
+                             *
+                             * Approved: green
+                             * Rejected: red
+                             * Pending:
+                             *  Has permission & enough balance: green
+                             *  Else: red
+                             */
+                            borderColor: {
+                                [TransactionState.Approved]: theme.colors.green,
+                                [TransactionState.Rejected]: theme.colors.red,
+                                [TransactionState.Pending]:
+                                    hasPermission && hasEnoughBalance
+                                        ? theme.colors.green
+                                        : theme.colors.red,
+                            }[data.transaction.state][
+                                theme.colorScheme === 'dark' ? 9 : 4
+                            ],
+                        })}
+                    >
                         {
-                            [TransactionState.Approved]: (
-                                <Text color={'green'}>
-                                    Transaction was approved!
-                                </Text>
-                            ),
-                            [TransactionState.Rejected]: (
-                                <Text color={'red'}>
-                                    Transaction was rejected!
-                                </Text>
-                            ),
-                            [TransactionState.Pending]: (
-                                <Stack>
-                                    {hasPermission ? (
-                                        hasEnoughBalance ? (
-                                            <>
-                                                <Text
-                                                    color={'green'}
-                                                    mb={'sm'}
-                                                    weight={600}
-                                                >
-                                                    This transaction is good to
-                                                    go!
-                                                </Text>
-                                                <Button color={'green'}>
-                                                    Approve
-                                                </Button>
-                                            </>
+                            {
+                                [TransactionState.Approved]: (
+                                    <Text
+                                        color={'green'}
+                                        mb={'sm'}
+                                        weight={600}
+                                    >
+                                        Transaction was approved!
+                                    </Text>
+                                ),
+                                [TransactionState.Rejected]: (
+                                    <Text color={'red'} mb={'sm'} weight={600}>
+                                        Transaction was rejected!
+                                    </Text>
+                                ),
+                                [TransactionState.Pending]: (
+                                    <Stack>
+                                        {hasPermission ? (
+                                            hasEnoughBalance ? (
+                                                <>
+                                                    <Text
+                                                        color={'green'}
+                                                        mb={'sm'}
+                                                        weight={600}
+                                                    >
+                                                        This transaction is good
+                                                        to go!
+                                                    </Text>
+                                                    <Button
+                                                        color={'green'}
+                                                        onClick={approve}
+                                                    >
+                                                        Approve
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Text
+                                                        color={'red'}
+                                                        mb={'sm'}
+                                                        weight={600}
+                                                    >
+                                                        This transaction cannot
+                                                        be approved
+                                                    </Text>
+                                                    <Button
+                                                        color={'red'}
+                                                        onClick={reject}
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                    <Button
+                                                        component={NavLink}
+                                                        to={'./new'}
+                                                        color={'grape'}
+                                                        variant={'subtle'}
+                                                    >
+                                                        Add more funds
+                                                    </Button>
+                                                </>
+                                            )
                                         ) : (
                                             <>
                                                 <Text
@@ -290,37 +455,21 @@ export default function TransactionPage() {
                                                     mb={'sm'}
                                                     weight={600}
                                                 >
-                                                    This transaction cannot be
-                                                    approved
+                                                    You do not have permission
+                                                    to approve this transaction
                                                 </Text>
-                                                <Button color={'red'}>
-                                                    Reject
-                                                </Button>
-                                                <Button
-                                                    color={'grape'}
-                                                    variant={'subtle'}
-                                                >
-                                                    Add more funds
-                                                </Button>
+                                                <Text color={'red'} mb={'sm'}>
+                                                    You must be the reviewer to
+                                                    approve this transaction
+                                                </Text>
                                             </>
-                                        )
-                                    ) : (
-                                        <>
-                                            <Text
-                                                color={'red'}
-                                                mb={'sm'}
-                                                weight={600}
-                                            >
-                                                You do not have permission to
-                                                review this transaction
-                                            </Text>
-                                        </>
-                                    )}
-                                </Stack>
-                            ),
-                        }[data.transaction.state]
-                    }
-                </Card>
+                                        )}
+                                    </Stack>
+                                ),
+                            }[data.transaction.state]
+                        }
+                    </Card>
+                </div>
             </SimpleGrid>
         </div>
     )
