@@ -66,7 +66,7 @@ export async function register({
         })
     })
 
-    let user = await db.user.findUnique({
+    let user = await db.user.findFirst({
         where: {
             username,
             email,
