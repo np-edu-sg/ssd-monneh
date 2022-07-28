@@ -24,7 +24,7 @@ import {
     Text,
 } from '@mantine/core'
 import type { ThrownResponse } from '@remix-run/react'
-import { useLoaderData, useParams } from '@remix-run/react'
+import { NavLink, useLoaderData, useParams } from '@remix-run/react'
 import { db } from '~/utils/db.server'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { TransactionState } from '@prisma/client'
@@ -126,11 +126,15 @@ export default function TransactionPage() {
     return (
         <div>
             <Breadcrumbs>
-                <Anchor href={`/dashboard/organizations/${organizationId}`}>
+                <Anchor
+                    component={NavLink}
+                    to={`/dashboard/organizations/${organizationId}`}
+                >
                     {data.transaction.wallet.organization.name}
                 </Anchor>
                 <Anchor
-                    href={`/dashboard/organizations/${organizationId}/wallets/${walletId}`}
+                    component={NavLink}
+                    to={`/dashboard/organizations/${organizationId}/wallets/${walletId}`}
                 >
                     {data.transaction.wallet.name}
                 </Anchor>

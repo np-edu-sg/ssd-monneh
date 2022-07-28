@@ -122,7 +122,10 @@ export default function WalletPage() {
     return (
         <div>
             <Breadcrumbs>
-                <Anchor href={`/dashboard/organizations/${organizationId}`}>
+                <Anchor
+                    component={NavLink}
+                    to={`/dashboard/organizations/${organizationId}`}
+                >
                     {data.wallet.organization.name}
                 </Anchor>
                 <Text>{data.wallet.name}</Text>

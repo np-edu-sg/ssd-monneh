@@ -7,6 +7,7 @@ import { json, redirect } from '@remix-run/node'
 import type { ThrownResponse } from '@remix-run/react'
 import {
     Form,
+    NavLink,
     useCatch,
     useLoaderData,
     useParams,
@@ -290,7 +291,10 @@ export default function OrganizationSettingsPage() {
     return (
         <div>
             <Breadcrumbs>
-                <Anchor href={`/dashboard/organizations/${organizationId}`}>
+                <Anchor
+                    component={NavLink}
+                    to={`/dashboard/organizations/${organizationId}`}
+                >
                     {data.organization.name}
                 </Anchor>
                 <Text>Settings</Text>

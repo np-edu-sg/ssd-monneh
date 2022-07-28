@@ -7,6 +7,7 @@ import { db } from '~/utils/db.server'
 import type { ThrownResponse } from '@remix-run/react'
 import {
     Form,
+    NavLink,
     useActionData,
     useCatch,
     useLoaderData,
@@ -348,12 +349,14 @@ export default function NewTransactionPage() {
                         <div>
                             <Breadcrumbs>
                                 <Anchor
-                                    href={`/dashboard/organizations/${organizationId}`}
+                                    component={NavLink}
+                                    to={`/dashboard/organizations/${organizationId}`}
                                 >
                                     {data.wallet.organization.name}
                                 </Anchor>
                                 <Anchor
-                                    href={`/dashboard/organizations/${organizationId}/wallets/${walletId}`}
+                                    component={NavLink}
+                                    to={`/dashboard/organizations/${organizationId}/wallets/${walletId}`}
                                 >
                                     {data.wallet.name}
                                 </Anchor>
