@@ -28,14 +28,21 @@ import { NavLink, useLoaderData, useParams } from '@remix-run/react'
 import { db } from '~/utils/db.server'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { TransactionState } from '@prisma/client'
+import { useMemo } from 'react'
 
 interface LoaderData {
+    username: string
     transaction: {
         notes: string
         state: TransactionState
         entryDateTime: string
         spendDateTime: string
         transactionValue: number
+        reviewer: {
+            username: string
+            firstName: string
+            lastName: string
+        }
         creator: {
             username: string
             firstName: string
@@ -92,6 +99,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
                     lastName: true,
                 },
             },
+            reviewer: {
+                select: {
+                    username: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            },
         },
     })
     if (!transaction) {
@@ -99,6 +113,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     }
 
     return json<LoaderData>({
+        username,
         transaction: {
             ...transaction,
             spendDateTime: transaction.spendDateTime.toISOString(),
@@ -120,8 +135,16 @@ export default function TransactionPage() {
         data.transaction.transactionValue
     )
 
-    const approvable =
-        data.transaction.wallet.balance >= data.transaction.transactionValue
+    const hasEnoughBalance = useMemo(
+        () =>
+            data.transaction.transactionValue >=
+            data.transaction.wallet.balance,
+        [data]
+    )
+    const hasPermission = useMemo(
+        () => data.transaction.reviewer.username === data.username,
+        [data]
+    )
 
     return (
         <div>
@@ -192,6 +215,21 @@ export default function TransactionPage() {
                         </Group>
                     </Group>
 
+                    <Group position={'apart'} align={'center'}>
+                        <Text size={'sm'} color={'dimmed'} mb={'sm'}>
+                            Reviewer
+                        </Text>
+                        <Group>
+                            <Avatar color={'green'} size={'sm'}>
+                                {data.transaction.reviewer.username[0]}
+                            </Avatar>
+                            <Text>
+                                {data.transaction.reviewer.firstName}{' '}
+                                {data.transaction.reviewer.lastName}
+                            </Text>
+                        </Group>
+                    </Group>
+
                     <div>
                         <Text size={'sm'} color={'dimmed'}>
                             Notes
@@ -209,10 +247,11 @@ export default function TransactionPage() {
                     sx={(theme) => ({
                         borderStyle: 'solid',
                         borderWidth: 1,
-                        borderColor:
-                            theme.colorScheme === 'dark'
-                                ? theme.colors.green[9]
-                                : theme.colors.green[4],
+                        borderColor: (hasPermission && hasEnoughBalance
+                            ? theme.colors.green
+                            : theme.colors.red)[
+                            theme.colorScheme === 'dark' ? 9 : 4
+                        ],
                     })}
                 >
                     {
@@ -229,19 +268,42 @@ export default function TransactionPage() {
                             ),
                             [TransactionState.Pending]: (
                                 <Stack>
-                                    {approvable ? (
-                                        <>
-                                            <Text
-                                                color={'green'}
-                                                mb={'sm'}
-                                                weight={600}
-                                            >
-                                                This transaction is good to go!
-                                            </Text>
-                                            <Button color={'green'}>
-                                                Approve
-                                            </Button>
-                                        </>
+                                    {hasPermission ? (
+                                        hasEnoughBalance ? (
+                                            <>
+                                                <Text
+                                                    color={'green'}
+                                                    mb={'sm'}
+                                                    weight={600}
+                                                >
+                                                    This transaction is good to
+                                                    go!
+                                                </Text>
+                                                <Button color={'green'}>
+                                                    Approve
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Text
+                                                    color={'red'}
+                                                    mb={'sm'}
+                                                    weight={600}
+                                                >
+                                                    This transaction cannot be
+                                                    approved
+                                                </Text>
+                                                <Button color={'red'}>
+                                                    Reject
+                                                </Button>
+                                                <Button
+                                                    color={'grape'}
+                                                    variant={'subtle'}
+                                                >
+                                                    Add more funds
+                                                </Button>
+                                            </>
+                                        )
                                     ) : (
                                         <>
                                             <Text
@@ -249,18 +311,9 @@ export default function TransactionPage() {
                                                 mb={'sm'}
                                                 weight={600}
                                             >
-                                                You do not have enough balance
-                                                to approve this transaction!
+                                                You do not have permission to
+                                                review this transaction
                                             </Text>
-                                            <Button color={'red'}>
-                                                Reject
-                                            </Button>
-                                            <Button
-                                                color={'grape'}
-                                                variant={'subtle'}
-                                            >
-                                                Add more funds
-                                            </Button>
                                         </>
                                     )}
                                 </Stack>
