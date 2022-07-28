@@ -32,13 +32,13 @@ import {
 } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { useForm } from '@mantine/form'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { DatePicker } from '@mantine/dates'
 import { AutoCompleteItem } from '~/components'
-import { useDebounceFn } from 'ahooks'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { TransactionState } from '@prisma/client'
+import { useDebounceFn } from 'ahooks'
 
 enum Action {
     UserSearch = 'user-search',
@@ -86,7 +86,7 @@ const createTransactionBodySchema = (requesterUsername: string) =>
 
 const transactionValueSchema = z
     .number()
-    .gt(0, 'Balance must be greater than 0')
+    .gt(0, 'Amount must be greater than 0')
     .step(0.01, 'Balance cannot have more than 2 decimal points')
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -465,7 +465,6 @@ export default function NewTransactionPage() {
                                         ]}
                                         color={segmentedControlColor}
                                         {...form.getInputProps('type')}
-                                        error={actionData?.errors?.type}
                                     />
                                 </Group>
 

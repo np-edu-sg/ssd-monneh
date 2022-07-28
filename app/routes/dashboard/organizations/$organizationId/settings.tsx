@@ -1,33 +1,55 @@
+/**
+ * There is quite an amount of duplicated code on this page, copied from setup. This is because... well their functionality are mostly similar.
+ */
+
 import type { ActionFunction, LoaderFunction } from '@remix-run/node'
+import { json } from '@remix-run/node'
 import { requireUser } from '~/utils/session.server'
 import invariant from 'tiny-invariant'
-import { requireAuthorization } from '~/utils/authorization.server'
+import {
+    defaultRoles,
+    requireAuthorization,
+} from '~/utils/authorization.server'
 import { db } from '~/utils/db.server'
-import { json, redirect } from '@remix-run/node'
 import type { ThrownResponse } from '@remix-run/react'
 import {
     Form,
-    NavLink,
+    useActionData,
     useCatch,
     useLoaderData,
-    useParams,
     useSubmit,
+    useTransition,
 } from '@remix-run/react'
-import { Anchor, Breadcrumbs, Center, Text, TextInput } from '@mantine/core'
-import { useForm } from '@mantine/form'
-import { useDebounceFn } from 'ahooks'
-import type { AutoCompleteFilter } from '~/components'
-import { useCallback } from 'react'
+import {
+    ActionIcon,
+    Autocomplete,
+    Button,
+    Card,
+    Center,
+    Group,
+    ScrollArea,
+    Select,
+    Table,
+    Text,
+    TextInput,
+} from '@mantine/core'
+import { formList, useForm } from '@mantine/form'
+import { useCallback, useEffect, useMemo } from 'react'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { Prisma } from '@prisma/client'
 import * as z from 'zod'
 import { Role } from '~/utils/roles'
+import { showNotification } from '@mantine/notifications'
+import { randomId } from '@mantine/hooks'
+import { useDebounceFn } from 'ahooks'
+import type { AutoCompleteFilter } from '~/components'
+import { AutoCompleteItem, RoleSelectItem } from '~/components'
+import { Plus, Trash } from 'tabler-icons-react'
 
 // TODO: User search is duplicated across many places, should probably extract it
 enum Action {
     UserSearch = 'user-search',
-    AddMembers = 'add-members',
-    DeleteMember = 'delete-member',
+    UpdateOrganization = 'update-organization',
 }
 
 interface UserSearchActionData {
@@ -35,15 +57,16 @@ interface UserSearchActionData {
     users: { label: string; value: string }[]
 }
 
-interface AddMembersActionData {
-    readonly action: Action.AddMembers
+interface UpdateMembersActionData {
+    readonly action: Action.UpdateOrganization
     errors?: Record<string, string>
 }
 
-type ActionData = UserSearchActionData | AddMembersActionData
+type ActionData = UserSearchActionData | UpdateMembersActionData
 
-const createAddMembersBodySchema = (requesterUsername: string) =>
+const createUpdateMembersBodySchema = (requesterUsername: string) =>
     z.object({
+        name: z.string().min(1, 'Name is required'),
         members: z.array(
             z.object({
                 username: z
@@ -102,7 +125,7 @@ export const action: ActionFunction = async ({ request, params }) => {
             })
         }
 
-        case Action.AddMembers: {
+        case Action.UpdateOrganization: {
             const object: Record<string, string> = {}
             formData.forEach((value, key) => {
                 if (typeof value === 'string') {
@@ -114,20 +137,20 @@ export const action: ActionFunction = async ({ request, params }) => {
                     object['members'] = JSON.parse(object['members'])
                 } catch {
                     return json<ActionData>({
-                        action: Action.AddMembers,
+                        action: Action.UpdateOrganization,
                         errors: {
                             members: 'Members must be a marshalled object',
                         },
                     })
                 }
             }
-            const result = await createAddMembersBodySchema(
+            const result = await createUpdateMembersBodySchema(
                 username
             ).safeParseAsync(object)
             if (!result.success) {
                 // TODO - although there is a validation error response, it is not handled on the client because of the list nature
                 return json<ActionData>({
-                    action: Action.AddMembers,
+                    action: Action.UpdateOrganization,
                     errors: getValidationErrorObject(result.error.issues),
                 })
             }
@@ -139,6 +162,23 @@ export const action: ActionFunction = async ({ request, params }) => {
             )
 
             await db.$transaction(async (prisma) => {
+                await prisma.organization.update({
+                    where: {
+                        id: organizationId,
+                    },
+                    data: {
+                        name: result.data.name,
+                    },
+                })
+                await prisma.organizationToUser.deleteMany({
+                    where: {
+                        organizationId,
+                        username: {
+                            not: username,
+                        },
+                    },
+                })
+
                 await Promise.all(
                     result.data.members.map(async ({ username, role }) => {
                         try {
@@ -189,27 +229,24 @@ export const action: ActionFunction = async ({ request, params }) => {
                         }
                     })
                 )
-
-                await prisma.organization.update({
-                    where: {
-                        id: organizationId,
-                    },
-                    data: {
-                        completedSetup: true,
-                    },
-                })
             })
 
-            return redirect(`/dashboard/organizations/${organizationId}`)
+            return json({})
         }
     }
 }
 
 interface LoaderData {
+    username: string
     organization: {
         name: string
-        users: string[]
+        users: { username: string; role: string }[]
     }
+    roles: {
+        id: string
+        name: string
+        description: string
+    }[]
 }
 
 type OrganizationNotFoundError = ThrownResponse<404, string>
@@ -232,6 +269,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             name: true,
             users: {
                 select: {
+                    role: true,
                     user: {
                         select: {
                             username: true,
@@ -246,27 +284,87 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         throw json('Organization not found', { status: 404 })
     }
 
-    const users = organization.users.map(({ user: { username } }) => username)
+    const users = organization.users.map(({ user: { username }, role }) => ({
+        username,
+        role,
+    }))
 
     return json<LoaderData>({
+        username,
         organization: {
             ...organization,
             users,
         },
+        roles: Object.values(Role).map((key) => ({
+            id: key,
+            name: defaultRoles[key].name,
+            description: defaultRoles[key].description,
+        })),
     })
 }
 
 export default function OrganizationSettingsPage() {
     const submit = useSubmit()
-    const { organizationId } = useParams()
-    const data = useLoaderData<LoaderData>()
+    const transition = useTransition()
+    const actionData = useActionData<ActionData>()
+    const loaderData = useLoaderData<LoaderData>()
+
+    useEffect(() => {
+        if (actionData?.action !== Action.UpdateOrganization) return
+        if (!actionData.errors) return
+
+        showNotification({
+            color: 'red',
+            title: 'Error setting up',
+            message: (
+                <>
+                    {Object.values(actionData.errors).map((v, idx) => (
+                        <Text key={idx} size={'sm'}>
+                            {v}
+                        </Text>
+                    ))}
+                </>
+            ),
+        })
+    }, [actionData])
 
     const form = useForm({
         initialValues: {
-            name: data.organization.name,
-            members: data.organization.users,
+            name: loaderData.organization.name,
+            members: formList<{
+                username: string
+                role: string
+                key: string
+            }>(
+                loaderData.organization.users.map((v) => ({
+                    ...v,
+                    key: randomId(),
+                }))
+            ),
+        },
+
+        validate: {
+            name: (value) =>
+                value.length > 0 && value.length < 33
+                    ? null
+                    : 'Name length must be between 0 and 32',
+            members: {
+                username: (value) =>
+                    value.length > 0 ? null : 'Username is required',
+                role: (value) => (value.length > 0 ? null : 'Role is required'),
+            },
         },
     })
+
+    const roles = useMemo(
+        () =>
+            loaderData.roles.map(({ id, name, description }) => ({
+                value: id,
+                label: name,
+                description,
+            })),
+        [loaderData.roles]
+    )
 
     const { run: runSearch } = useDebounceFn(
         (search: string) => {
@@ -278,36 +376,163 @@ export default function OrganizationSettingsPage() {
     const autocompleteFilter: (idx: number) => AutoCompleteFilter = useCallback(
         (idx) =>
             (_, { value }) => {
-                return form.values.members.indexOf(value) === -1
+                return (
+                    form.values.members
+                        .map(({ username }, idx2) => idx !== idx2 && username)
+                        .indexOf(value) === -1
+                )
             },
         [form.values.members]
     )
 
     const handleAutocompleteChange = (idx: number) => (value: string) => {
-        form.setFieldValue(`members.${idx}`, value)
+        form.getListInputProps('members', idx, 'username').onChange(value)
         runSearch(value)
     }
 
     return (
         <div>
-            <Breadcrumbs>
-                <Anchor
-                    component={NavLink}
-                    to={`/dashboard/organizations/${organizationId}`}
-                >
-                    {data.organization.name}
-                </Anchor>
-                <Text>Settings</Text>
-            </Breadcrumbs>
+            <Text weight={600} size={'xl'} component={'h1'}>
+                Organization settings
+            </Text>
 
-            <br />
+            <Form
+                onSubmit={form.onSubmit(async (values) => {
+                    submit(
+                        {
+                            ...values,
+                            members: JSON.stringify(
+                                values.members.filter(
+                                    ({ username }) =>
+                                        username !== loaderData.username
+                                )
+                            ),
+                            action: Action.UpdateOrganization,
+                        },
+                        { method: 'post' }
+                    )
+                })}
+            >
+                <TextInput label={'Name'} {...form.getInputProps('name')} />
+                <br />
+                <Card>
+                    <Group position={'apart'}>
+                        <Text weight={600} size={'lg'}>
+                            Members
+                        </Text>
 
-            <Form>
-                <TextInput
-                    label={'Name'}
-                    placeholder={'ACME Corporation'}
-                    {...form.getInputProps('name')}
-                />
+                        <Button
+                            variant={'outline'}
+                            onClick={() => {
+                                form.addListItem('members', {
+                                    username: '',
+                                    role: Role.Member,
+                                    key: randomId(),
+                                })
+                            }}
+                        >
+                            <Plus size={20} />
+                        </Button>
+                    </Group>
+
+                    <br />
+
+                    <ScrollArea offsetScrollbars scrollbarSize={10}>
+                        <Table verticalSpacing={'sm'}>
+                            <colgroup>
+                                <col style={{ width: '55%', minWidth: 300 }} />
+                                <col style={{ width: '40%', minWidth: 200 }} />
+                                <col style={{ width: '5%' }} />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Role</th>
+                                    <th>Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {form.values.members.map((item, idx) => (
+                                    <tr key={item.key}>
+                                        <td>
+                                            <Autocomplete
+                                                placeholder={
+                                                    'Username or email'
+                                                }
+                                                disabled={
+                                                    loaderData.username ===
+                                                    item.username
+                                                }
+                                                itemComponent={AutoCompleteItem}
+                                                filter={autocompleteFilter(idx)}
+                                                data={
+                                                    actionData?.action ===
+                                                    Action.UserSearch
+                                                        ? actionData.users
+                                                        : []
+                                                }
+                                                {...form.getListInputProps(
+                                                    'members',
+                                                    idx,
+                                                    'username'
+                                                )}
+                                                value={
+                                                    form.getListInputProps(
+                                                        'members',
+                                                        idx,
+                                                        'username'
+                                                    ).value
+                                                }
+                                                onChange={handleAutocompleteChange(
+                                                    idx
+                                                )}
+                                            />
+                                        </td>
+                                        <td>
+                                            <Select
+                                                data={roles}
+                                                disabled={
+                                                    loaderData.username ===
+                                                    item.username
+                                                }
+                                                itemComponent={RoleSelectItem}
+                                                {...form.getListInputProps(
+                                                    'members',
+                                                    idx,
+                                                    'role'
+                                                )}
+                                            />
+                                        </td>
+                                        <td>
+                                            <ActionIcon
+                                                color={'red'}
+                                                variant={'hover'}
+                                                disabled={
+                                                    loaderData.username ===
+                                                    item.username
+                                                }
+                                                onClick={() =>
+                                                    form.removeListItem(
+                                                        'members',
+                                                        idx
+                                                    )
+                                                }
+                                            >
+                                                <Trash size={16} />
+                                            </ActionIcon>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </ScrollArea>
+                </Card>
+
+                <br />
+
+                <Group position={'apart'}>
+                    <Button type={'submit'}>Save</Button>
+                </Group>
             </Form>
         </div>
     )

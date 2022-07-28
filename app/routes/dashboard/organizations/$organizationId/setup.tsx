@@ -8,10 +8,8 @@ import {
     useTransition,
 } from '@remix-run/react'
 import { formList, useForm } from '@mantine/form'
-import type { ComponentPropsWithoutRef } from 'react'
-import { forwardRef, useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useDebounceFn } from 'ahooks'
-import type { SelectItemProps } from '@mantine/core'
 import {
     ActionIcon,
     Autocomplete,
@@ -43,7 +41,7 @@ import { Role } from '~/utils/roles'
 
 import { Prisma } from '@prisma/client'
 import type { AutoCompleteFilter } from '~/components'
-import { AutoCompleteItem } from '~/components'
+import { AutoCompleteItem, RoleSelectItem } from '~/components'
 
 enum Action {
     UserSearch = 'user-search',
@@ -269,25 +267,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         })),
     })
 }
-
-interface ItemProps extends SelectItemProps, ComponentPropsWithoutRef<'div'> {
-    description: string
-}
-
-const RoleSelectItem = forwardRef<HTMLDivElement, ItemProps>(
-    ({ label, description, ...others }: ItemProps, ref) => (
-        <div ref={ref} {...others}>
-            <Group noWrap>
-                <div>
-                    <Text size={'sm'}>{label}</Text>
-                    <Text size={'xs'} color={'dimmed'}>
-                        {description}
-                    </Text>
-                </div>
-            </Group>
-        </div>
-    )
-)
 
 export default function OrganizationSetupPage() {
     const submit = useSubmit()
