@@ -17,8 +17,8 @@ interface ActionData {
 const createOrganizationBodySchema = z.object({
     name: z
         .string()
-        .min(1, 'Name is required')
-        .max(32, 'Name must not be longer than 32 characters'),
+        .min(1, 'Organization Name is required')
+        .max(64, 'Organization Name must not be longer than 64 characters'),
 })
 
 export const action: ActionFunction = async ({ request }) => {

@@ -345,9 +345,9 @@ export default function OrganizationSettingsPage() {
 
         validate: {
             name: (value) =>
-                value.length > 0 && value.length < 33
+                value.length > 0 && value.length < 65
                     ? null
-                    : 'Name length must be between 0 and 32',
+                    : 'Name length must be between 0 and 64',
             members: {
                 username: (value) =>
                     value.length > 0 ? null : 'Username is required',

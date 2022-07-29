@@ -27,7 +27,7 @@ model Audit {
 model Organization {
   id Int @id @default(autoincrement())
 
-  name           String  @db.VarChar(32)
+  name           String  @db.VarChar(64)
   completedSetup Boolean
 
   audits  Audit[]
@@ -36,10 +36,10 @@ model Organization {
 }
 
 model User {
-  username             String               @id @db.VarChar(32)
+  username             String               @id @db.VarChar(64)
   email                String               @unique
-  firstName            String               @db.VarChar(32)
-  lastName             String               @db.VarChar(32)
+  firstName            String               @db.VarChar(64)
+  lastName             String               @db.VarChar(64)
   passwordHash         String
   reviewedTransactions Transaction[]        @relation("ReviewedTransactions")
   createdTransactions  Transaction[]        @relation("CreatedTransactions")
@@ -60,7 +60,7 @@ model OrganizationToUser {
 
 model Wallet {
   id               Int           @id @default(autoincrement())
-  name             String
+  name             String        @db.VarChar(64)
   balance          Decimal       @default(0)
   transactionCount Int           @default(0)
   organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)

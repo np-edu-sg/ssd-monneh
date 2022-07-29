@@ -36,7 +36,7 @@ import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 
 const updateWalletBodySchema = z.object({
-    name: z.string().min(0, 'Name is required'),
+    name: z.string().min(1, 'Wallet Name is required').max(64,'Wallet name should not be longer than 64 characters'),
 })
 
 interface ActionData {

@@ -26,7 +26,7 @@ import invariant from 'tiny-invariant'
 import { db } from '~/utils/db.server'
 
 const createWalletBodySchema = z.object({
-    name: z.string().min(1, 'Name is required'),
+    name: z.string().min(1, 'Wallet Name is required').max(64, 'Wallet Name must be less than or equals to 64 characters'),
     balance: z.string().regex(/^\d+$/).transform(Number),
 })
 
