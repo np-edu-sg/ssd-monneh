@@ -5,8 +5,7 @@ import { requireAuthorization } from '~/utils/authorization.server'
 import invariant from 'tiny-invariant'
 import { db } from '~/utils/db.server'
 import { useLoaderData } from '@remix-run/react'
-import { ScrollArea, Skeleton, Stack, Table, Text } from '@mantine/core'
-import { useMemo } from 'react'
+import { ScrollArea, Table, Text } from '@mantine/core'
 
 interface LoaderData {
     logs: {
@@ -18,6 +17,16 @@ interface LoaderData {
         objectId: number
         message: string
     }[]
+}
+
+const keyNameMapping: Record<string, string> = {
+    id: 'ID',
+    timestamp: 'Timestamp',
+    subject: 'Username',
+    action: 'Action',
+    objectType: 'Object',
+    objectId: 'Object ID',
+    message: 'Notes',
 }
 
 export const loader: LoaderFunction = async ({ request, params }) => {
@@ -36,6 +45,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         where: {
             organizationId,
         },
+        select: {
+            id: true,
+            timestamp: true,
+            subject: true,
+            action: true,
+            objectType: true,
+            objectId: true,
+            message: true,
+        },
     })
 
     return json<LoaderData>({ logs: logs.reverse() })
@@ -52,7 +70,7 @@ export default function OrganizationAuditPage() {
                         <thead>
                             <tr>
                                 {Object.keys(data.logs[0]).map((key) => (
-                                    <th key={key}>{key}</th>
+                                    <th key={key}>{keyNameMapping[key]}</th>
                                 ))}
                             </tr>
                         </thead>
