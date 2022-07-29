@@ -1,6 +1,12 @@
 import type { ThrownResponse } from '@remix-run/react'
-import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
-import type { LoaderFunction } from '@remix-run/node'
+import {
+    NavLink,
+    useCatch,
+    useLoaderData,
+    useParams,
+    useSubmit,
+} from '@remix-run/react'
+import type { ActionFunction, LoaderFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
 import {
     ActionIcon,
@@ -12,6 +18,7 @@ import {
     Center,
     Group,
     MediaQuery,
+    Menu,
     Stack,
     Text,
     UnstyledButton,
@@ -22,8 +29,38 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import { ChevronRight, DoorExit, Settings } from 'tabler-icons-react'
 import { useFormattedCurrency } from '~/hooks/formatter'
+import { useModals } from '@mantine/modals'
+import { Role } from '~/utils/roles'
+
+export const action: ActionFunction = async ({ request, params }) => {
+    invariant(params.organizationId, 'Expected params.organizationId')
+
+    const { username } = await requireUser(request)
+
+    const organizationId = parseInt(params.organizationId)
+    const { role } = await requireAuthorization(
+        username,
+        organizationId,
+        () => true
+    )
+    if (role === Role.Owner) {
+        return json('Owners cannot leave the organization', { status: 400 })
+    }
+
+    await db.organizationToUser.delete({
+        where: {
+            organizationId_username: {
+                organizationId,
+                username,
+            },
+        },
+    })
+
+    return redirect('/dashboard')
+}
 
 interface LoaderData {
+    canLeaveOrganization: boolean
     organization: {
         id: number
         name: string
@@ -52,7 +89,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     const { username } = await requireUser(request)
 
     const id = parseInt(params.organizationId) || 0
-    await requireAuthorization(username, id, () => true)
+    const role = await requireAuthorization(username, id, () => true)
 
     const organization = await db.organization.findUnique({
         include: {
@@ -80,7 +117,16 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     if (!organization.completedSetup)
         return redirect(`/dashboard/organizations/${id}/setup`)
 
-    return json({ organization })
+    return json<LoaderData>({
+        canLeaveOrganization: role.role !== Role.Owner,
+        organization: {
+            ...organization,
+            wallets: organization.wallets.map((v) => ({
+                ...v,
+                balance: v.balance.toNumber(),
+            })),
+        },
+    })
 }
 
 interface WalletCardProps {
@@ -119,7 +165,29 @@ function WalletCard({ id, name, balance }: WalletCardProps) {
 }
 
 export default function OrganizationPage() {
-    const { organization } = useLoaderData<LoaderData>()
+    const modals = useModals()
+    const submit = useSubmit()
+    const { organization, canLeaveOrganization } = useLoaderData<LoaderData>()
+
+    const openConfirmModal = () =>
+        modals.openConfirmModal({
+            title: 'Are you sure?',
+            centered: true,
+            confirmProps: { color: 'red' },
+            children: (
+                <Text size={'sm'}>
+                    Leaving an organization is permanent!
+                    <br />
+                    <br />
+                    <Text color={'red'} weight={600}>
+                        You will need to get the organization owner to add you
+                        back!
+                    </Text>
+                </Text>
+            ),
+            labels: { confirm: 'Confirm', cancel: 'Cancel' },
+            onConfirm: () => submit(null, { method: 'delete' }),
+        })
 
     return (
         <div>
@@ -128,14 +196,30 @@ export default function OrganizationPage() {
                     <Text size={'xl'} weight={600}>
                         Wallets
                     </Text>
-                    <Button
-                        color={'cyan'}
-                        variant={'outline'}
-                        component={NavLink}
-                        to={`/dashboard/organizations/${organization.id}/wallets/new`}
-                    >
-                        Add wallet
-                    </Button>
+
+                    <Group>
+                        <Button
+                            color={'cyan'}
+                            variant={'outline'}
+                            component={NavLink}
+                            to={`/dashboard/organizations/${organization.id}/wallets/new`}
+                        >
+                            Add wallet
+                        </Button>
+
+                        {canLeaveOrganization && (
+                            <Menu>
+                                <Menu.Label>Danger zone</Menu.Label>
+                                <Menu.Item
+                                    color={'red'}
+                                    icon={<DoorExit size={14} />}
+                                    onClick={openConfirmModal}
+                                >
+                                    Leave organization
+                                </Menu.Item>
+                            </Menu>
+                        )}
+                    </Group>
                 </Group>
                 {organization.wallets.length === 0 ? (
                     <>
@@ -193,15 +277,9 @@ export default function OrganizationPage() {
                             </Stack>
                         </Stack>
 
-                        <Group>
-                            <ActionIcon component={NavLink} to={'./settings'}>
-                                <Settings />
-                            </ActionIcon>
-
-                            <ActionIcon>
-                                <DoorExit />
-                            </ActionIcon>
-                        </Group>
+                        <ActionIcon component={NavLink} to={'./settings'}>
+                            <Settings />
+                        </ActionIcon>
                     </Stack>
                 </Aside>
             </MediaQuery>

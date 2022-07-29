@@ -3,7 +3,7 @@
  */
 
 import type { ActionFunction, LoaderFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
 import { requireUser } from '~/utils/session.server'
 import invariant from 'tiny-invariant'
 import {
@@ -23,18 +23,20 @@ import {
 import {
     ActionIcon,
     Autocomplete,
+    Box,
     Button,
     Card,
     Center,
     Group,
     ScrollArea,
     Select,
+    Stack,
     Table,
     Text,
     TextInput,
 } from '@mantine/core'
 import { formList, useForm } from '@mantine/form'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { Prisma } from '@prisma/client'
 import * as z from 'zod'
@@ -47,6 +49,7 @@ import { AutoCompleteItem, RoleSelectItem } from '~/components'
 import { Plus, Trash } from 'tabler-icons-react'
 import { userSearchSchema } from '~/utils/user-search.server'
 import { audit } from '~/utils/audit.server'
+import { useModals } from '@mantine/modals'
 
 // TODO: User search is duplicated across many places, should probably extract it
 enum Action {
@@ -90,10 +93,25 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     const organizationId = parseInt(params.organizationId)
     const { username } = await requireUser(request)
+
+    if (request.method === 'DELETE') {
+        await requireAuthorization(
+            username,
+            organizationId,
+            (role) => role.allowUpdateOrganization
+        )
+
+        await db.organization.delete({
+            where: {
+                id: organizationId,
+            },
+        })
+
+        return redirect('/dashboard')
+    }
+
     const formData = await request.formData()
-
     const action = formData.get('action')
-
     switch (action) {
         case Action.UserSearch: {
             let search = formData.get('search')
@@ -336,9 +354,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
 export default function OrganizationSettingsPage() {
     const submit = useSubmit()
+    const modals = useModals()
     const transition = useTransition()
     const actionData = useActionData<ActionData>()
     const loaderData = useLoaderData<LoaderData>()
+
+    const [confirmation, setConfirmation] = useState('')
 
     useEffect(() => {
         if (actionData?.action !== Action.UpdateOrganization) return
@@ -419,6 +440,31 @@ export default function OrganizationSettingsPage() {
     const handleAutocompleteChange = (idx: number) => (value: string) => {
         form.getListInputProps('members', idx, 'username').onChange(value)
         runSearch(value)
+    }
+
+    const openConfirmModal = () => {
+        const id = modals.openConfirmModal({
+            title: `Delete ${loaderData.organization.name}?`,
+            centered: true,
+            confirmProps: { color: 'red' },
+            children: (
+                <Stack>
+                    <Text size={'sm'}>
+                        Deleting an organization is permanent!
+                        <br />
+                        <br />
+                        <Text color={'red'} weight={600}>
+                            This is irreversible!
+                            <br />
+                            You WILL lose all wallets, transactions, as well as
+                            logs!
+                        </Text>
+                    </Text>
+                </Stack>
+            ),
+            labels: { confirm: 'Confirm', cancel: 'Cancel' },
+            onConfirm: () => submit(null, { method: 'delete' }),
+        })
     }
 
     return (
@@ -574,6 +620,39 @@ export default function OrganizationSettingsPage() {
                     </Button>
                 </Group>
             </Form>
+
+            <br />
+
+            <Box
+                p={'lg'}
+                sx={(theme) => ({
+                    borderRadius: theme.radius.sm,
+                    borderWidth: 2,
+                    borderStyle: 'solid',
+                    borderColor:
+                        theme.colorScheme === 'dark'
+                            ? theme.colors.red[7]
+                            : theme.colors.red[4],
+                })}
+            >
+                <Stack spacing={'md'} align={'start'}>
+                    <Text weight={600} size={'lg'} color={'red'}>
+                        Danger zone
+                    </Text>
+
+                    <Text weight={600}>Delete this organization</Text>
+
+                    <Text>
+                        This is irreversible! You WILL lose all wallets,
+                        transactions, as well as logs. Please reconsider
+                        carefully before pressing the self destruct!
+                    </Text>
+
+                    <Button color={'red'} onClick={openConfirmModal}>
+                        Self destruct
+                    </Button>
+                </Stack>
+            </Box>
         </div>
     )
 }

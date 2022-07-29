@@ -9,8 +9,8 @@ import {
     useTransition,
 } from '@remix-run/react'
 import {
+    Box,
     Button,
-    Card,
     PasswordInput,
     SimpleGrid,
     Stack,
@@ -225,12 +225,7 @@ export default function ProfilePage() {
                 ]}
             >
                 <div>
-                    <Text
-                        weight={600}
-                        size={'lg'}
-                        component={'h2'}
-                        style={{ opacity: 0.75, marginTop: 0 }}
-                    >
+                    <Text weight={600} size={'lg'} component={'h2'}>
                         Your profile
                     </Text>
                     <Form
@@ -293,22 +288,26 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                    <Card
+                    <Box
+                        p={'lg'}
                         sx={(theme) => ({
-                            backgroundColor:
+                            borderRadius: theme.radius.sm,
+                            borderWidth: 2,
+                            borderStyle: 'solid',
+                            borderColor:
                                 theme.colorScheme === 'dark'
-                                    ? theme.fn.rgba(theme.colors.red[9], 0.2)
-                                    : theme.colors.red[1],
+                                    ? theme.colors.red[7]
+                                    : theme.colors.red[4],
                         })}
                     >
-                        <Text
-                            weight={600}
-                            size={'lg'}
-                            component={'h2'}
-                            style={{ opacity: 0.75, marginTop: 0 }}
-                        >
+                        <Text weight={600} size={'lg'} color={'red'}>
+                            Danger zone
+                        </Text>
+                        <br />
+                        <Text weight={600} size={'lg'}>
                             Update password
                         </Text>
+                        <br />
                         <Form
                             onSubmit={passwordForm.onSubmit(async (values) => {
                                 await submit(
@@ -368,7 +367,7 @@ export default function ProfilePage() {
                                 </Transition>
                             </Stack>
                         </Form>
-                    </Card>
+                    </Box>
                 </div>
             </SimpleGrid>
         </Stack>

@@ -22,7 +22,7 @@ model Audit {
   objectId   Int
   message    String
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationId Int
 }
 
@@ -52,7 +52,7 @@ model User {
 
 model OrganizationToUser {
   role           String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationId Int
   user           User         @relation(fields: [username], references: [username])
   username       String

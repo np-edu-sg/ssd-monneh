@@ -10,6 +10,9 @@ interface RoleValue {
     allowCreateWallets: boolean
     allowUpdateWallets: boolean
     allowDeleteWallets: boolean
+    /**
+     * This also lets the user delete the organization!
+     */
     allowUpdateOrganization: boolean
     allowReadAuditLog: boolean
 }
