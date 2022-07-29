@@ -562,7 +562,16 @@ export default function OrganizationSettingsPage() {
                 <br />
 
                 <Group position={'apart'}>
-                    <Button type={'submit'}>Save</Button>
+                    <Button
+                        type={'submit'}
+                        loading={
+                            transition.state === 'loading' &&
+                            transition.submission?.formData.get('action') ===
+                                Action.UpdateOrganization
+                        }
+                    >
+                        Save
+                    </Button>
                 </Group>
             </Form>
         </div>
