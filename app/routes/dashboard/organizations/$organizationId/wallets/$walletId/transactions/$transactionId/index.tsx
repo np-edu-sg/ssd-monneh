@@ -251,6 +251,14 @@ export default function TransactionPage() {
         [data]
     )
 
+    const spendDateTime = useMemo(() => {
+        return new Date(data.transaction.spendDateTime).toLocaleDateString()
+    }, [data])
+
+    const entryDateTime = useMemo(() => {
+        return new Date(data.transaction.entryDateTime).toLocaleDateString()
+    }, [data])
+
     const approve = () =>
         submit({ state: TransactionState.Approved }, { method: 'post' })
     const reject = () =>
@@ -344,6 +352,24 @@ export default function TransactionPage() {
                                 {data.transaction.reviewer.firstName}{' '}
                                 {data.transaction.reviewer.lastName}
                             </Text>
+                        </Group>
+                    </Group>
+
+                    <Group position={'apart'} align={'center'}>
+                        <Text size={'sm'} color={'dimmed'} mb={'sm'}>
+                            Spent on
+                        </Text>
+                        <Group>
+                            <Text>{spendDateTime}</Text>
+                        </Group>
+                    </Group>
+
+                    <Group position={'apart'} align={'center'}>
+                        <Text size={'sm'} color={'dimmed'} mb={'sm'}>
+                            Created on
+                        </Text>
+                        <Group>
+                            <Text color={'dimmed'}>{entryDateTime}</Text>
                         </Group>
                     </Group>
 

@@ -20,7 +20,7 @@ import { db } from '~/utils/db.server'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
-import { ChevronRight, Settings } from 'tabler-icons-react'
+import { ChevronRight, Door, DoorExit, Settings } from 'tabler-icons-react'
 import { useFormattedCurrency } from '~/hooks/formatter'
 
 interface LoaderData {
@@ -193,9 +193,15 @@ export default function OrganizationPage() {
                             </Stack>
                         </Stack>
 
-                        <ActionIcon component={NavLink} to={'./settings'}>
-                            <Settings />
-                        </ActionIcon>
+                        <Group>
+                            <ActionIcon component={NavLink} to={'./settings'}>
+                                <Settings />
+                            </ActionIcon>
+
+                            <ActionIcon>
+                                <DoorExit />
+                            </ActionIcon>
+                        </Group>
                     </Stack>
                 </Aside>
             </MediaQuery>

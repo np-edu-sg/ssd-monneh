@@ -391,7 +391,11 @@ export default function NewTransactionPage() {
                                     variant={'unstyled'}
                                     precision={2}
                                     min={1}
-                                    max={data.wallet.balance}
+                                    max={
+                                        form.values.type === TransactionType.Out
+                                            ? data.wallet.balance
+                                            : undefined
+                                    }
                                     step={0.05}
                                     sx={(theme) => ({
                                         paddingTop: theme.spacing.sm,
