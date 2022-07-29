@@ -31,6 +31,7 @@ import { TransactionState } from '@prisma/client'
 import { useMemo } from 'react'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
+import { audit } from '~/utils/audit.server'
 
 interface LoaderData {
     username: string
@@ -213,8 +214,19 @@ export const action: ActionFunction = async ({ request, params }) => {
             },
         })
 
+        await audit(
+            username,
+            organizationId,
+            'transaction',
+            transactionId,
+            result.data.state === TransactionState.Approved
+                ? 'approve'
+                : 'reject',
+            `Transaction was ${result.data.state}`
+        )
+
         if (result.data.state === TransactionState.Approved) {
-            await prisma.wallet.update({
+            const { balance } = await prisma.wallet.update({
                 where: {
                     id: walletId,
                 },
@@ -224,6 +236,14 @@ export const action: ActionFunction = async ({ request, params }) => {
                     },
                 },
             })
+            await audit(
+                username,
+                organizationId,
+                'wallet',
+                walletId,
+                'update',
+                `Wallet balance was incremented by ${transaction.transactionValue} to ${balance}`
+            )
         }
     })
 

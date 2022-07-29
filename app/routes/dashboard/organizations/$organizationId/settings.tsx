@@ -46,6 +46,7 @@ import type { AutoCompleteFilter } from '~/components'
 import { AutoCompleteItem, RoleSelectItem } from '~/components'
 import { Plus, Trash } from 'tabler-icons-react'
 import { userSearchSchema } from '~/utils/user-search.server'
+import { audit } from '~/utils/audit.server'
 
 // TODO: User search is duplicated across many places, should probably extract it
 enum Action {
@@ -171,15 +172,35 @@ export const action: ActionFunction = async ({ request, params }) => {
                 (role) => role.allowUpdateOrganization
             )
 
+            const organization = await db.organization.findUnique({
+                where: {
+                    id: organizationId,
+                },
+            })
+            invariant(organization, 'Expected organization to exist')
+
+            if (organization.name !== result.data.name) {
+                await audit(
+                    username,
+                    organizationId,
+                    'organization',
+                    organizationId,
+                    'update',
+                    `Updated organization name from ${organization.name} to ${result.data.name}`,
+                    async (prisma) => {
+                        await prisma.organization.update({
+                            where: {
+                                id: organizationId,
+                            },
+                            data: {
+                                name: result.data.name,
+                            },
+                        })
+                    }
+                )
+            }
+
             await db.$transaction(async (prisma) => {
-                await prisma.organization.update({
-                    where: {
-                        id: organizationId,
-                    },
-                    data: {
-                        name: result.data.name,
-                    },
-                })
                 await prisma.organizationToUser.deleteMany({
                     where: {
                         organizationId,

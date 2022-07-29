@@ -40,6 +40,7 @@ import { getValidationErrorObject } from '~/utils/validation.server'
 import { TransactionState } from '@prisma/client'
 import { useDebounceFn } from 'ahooks'
 import { userSearchSchema } from '~/utils/user-search.server'
+import { audit } from '~/utils/audit.server'
 
 enum Action {
     UserSearch = 'user-search',
@@ -257,6 +258,15 @@ export const action: ActionFunction = async ({ request, params }) => {
                             transactionCount: wallet.transactionCount + 1,
                         },
                     })
+
+                    await audit(
+                        username,
+                        organizationId,
+                        'transaction',
+                        id,
+                        'create',
+                        'Created new transaction'
+                    )
 
                     return redirect(
                         `/dashboard/organizations/${organizationId}/wallets/${walletId}/transactions/${id}`

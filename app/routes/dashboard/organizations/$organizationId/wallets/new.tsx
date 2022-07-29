@@ -24,6 +24,7 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import invariant from 'tiny-invariant'
 import { db } from '~/utils/db.server'
+import { audit } from '~/utils/audit.server'
 
 const createWalletBodySchema = z.object({
     name: z
@@ -70,19 +71,32 @@ export const action: ActionFunction = async ({ request, params }) => {
         (role) => role.allowCreateWallets
     )
 
-    const { id } = await db.wallet.create({
-        data: {
-            name: result.data.name,
-            balance: result2.data,
-            organization: {
-                connect: {
-                    id: organizationId,
+    return await db.$transaction(async (prisma) => {
+        const { id } = await prisma.wallet.create({
+            data: {
+                name: result.data.name,
+                balance: result2.data,
+                organization: {
+                    connect: {
+                        id: organizationId,
+                    },
                 },
             },
-        },
-    })
+        })
 
-    return redirect(`/dashboard/organizations/${organizationId}/wallets/${id}`)
+        await audit(
+            username,
+            organizationId,
+            'wallet',
+            id,
+            'create',
+            `Created new wallet with name ${result.data.name} and balance ${result2.data}`
+        )
+
+        return redirect(
+            `/dashboard/organizations/${organizationId}/wallets/${id}`
+        )
+    })
 }
 
 export const loader: LoaderFunction = async ({ request, params }) => {

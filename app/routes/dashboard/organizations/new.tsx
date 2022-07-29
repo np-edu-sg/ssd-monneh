@@ -9,6 +9,7 @@ import { getValidationErrorObject } from '~/utils/validation.server'
 import { requireUser } from '~/utils/session.server'
 import { Role } from '~/utils/roles'
 import { Prisma } from '@prisma/client'
+import { audit } from '~/utils/audit.server'
 
 interface ActionData {
     errors?: Record<string, string>
@@ -47,6 +48,15 @@ export const action: ActionFunction = async ({ request }) => {
             },
         },
     })
+
+    await audit(
+        username,
+        id,
+        'organization',
+        id,
+        'create',
+        'Created organization'
+    )
 
     return redirect(`/dashboard/organizations/${id}`)
 }

@@ -15,10 +15,12 @@ generator js {
 model Audit {
   id Int @id @default(autoincrement())
 
-  timestamp DateTime
-  subject   String
-  action    String
-  object    String
+  timestamp  DateTime
+  subject    String
+  action     String
+  objectType String
+  objectId   Int
+  message    String
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId Int

@@ -43,6 +43,7 @@ import { Prisma } from '@prisma/client'
 import type { AutoCompleteFilter } from '~/components'
 import { AutoCompleteItem, RoleSelectItem } from '~/components'
 import { userSearchSchema } from '~/utils/user-search.server'
+import { audit } from '~/utils/audit.server'
 
 enum Action {
     UserSearch = 'user-search',
@@ -83,7 +84,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         throw json('Organization ID is required', { status: 400 })
 
     const organizationId = parseInt(params.organizationId)
-    const { username } = await requireUser(request)
+    const { username: requesterUsername } = await requireUser(request)
     const formData = await request.formData()
 
     const action = formData.get('action')
@@ -116,7 +117,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                         email: { search },
                     },
                     NOT: {
-                        username,
+                        username: requesterUsername,
                     },
                 },
             })
@@ -150,7 +151,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                 }
             }
             const result = await createAddMembersBodySchema(
-                username
+                requesterUsername
             ).safeParseAsync(object)
             if (!result.success) {
                 // TODO - although there is a validation error response, it is not handled on the client because of the list nature
@@ -161,7 +162,7 @@ export const action: ActionFunction = async ({ request, params }) => {
             }
 
             await requireAuthorization(
-                username,
+                requesterUsername,
                 organizationId,
                 (role) => role.allowUpdateOrganization
             )
@@ -204,6 +205,15 @@ export const action: ActionFunction = async ({ request, params }) => {
                                     },
                                 },
                             })
+
+                            await audit(
+                                requesterUsername,
+                                organizationId,
+                                'organization',
+                                organizationId,
+                                'update',
+                                `Added member with username ${username}`
+                            )
                         } catch (e) {
                             if (
                                 e instanceof
@@ -226,6 +236,15 @@ export const action: ActionFunction = async ({ request, params }) => {
                         completedSetup: true,
                     },
                 })
+
+                await audit(
+                    requesterUsername,
+                    organizationId,
+                    'organization',
+                    organizationId,
+                    'update',
+                    'Completed organization setup'
+                )
             })
 
             return redirect(`/dashboard/organizations/${organizationId}`)
