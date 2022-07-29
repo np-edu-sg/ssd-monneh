@@ -4,10 +4,13 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import invariant from 'tiny-invariant'
 import { db } from '~/utils/db.server'
-import { useLoaderData } from '@remix-run/react'
-import { ScrollArea, Table, Text } from '@mantine/core'
+import { NavLink, useLoaderData, useParams } from '@remix-run/react'
+import { Anchor, Breadcrumbs, ScrollArea, Table, Text } from '@mantine/core'
 
 interface LoaderData {
+    organization: {
+        name: string
+    }
     logs: {
         id: number
         timestamp: Date
@@ -56,14 +59,35 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         },
     })
 
-    return json<LoaderData>({ logs: logs.reverse() })
+    const organization = await db.organization.findUnique({
+        where: {
+            id: organizationId,
+        },
+    })
+
+    invariant(organization, 'Expected organization')
+
+    return json<LoaderData>({ logs: logs.reverse(), organization })
 }
 
 export default function OrganizationAuditPage() {
+    const { organizationId } = useParams()
     const data = useLoaderData<LoaderData>()
 
     return (
         <div>
+            <Breadcrumbs>
+                <Anchor
+                    component={NavLink}
+                    to={`/dashboard/organizations/${organizationId}`}
+                >
+                    {data.organization.name}
+                </Anchor>
+                <Text>Audit</Text>
+            </Breadcrumbs>
+
+            <br />
+
             {data.logs.length > 0 ? (
                 <ScrollArea>
                     <Table verticalSpacing={'md'} horizontalSpacing={'sm'}>
