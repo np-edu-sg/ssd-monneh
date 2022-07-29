@@ -1,4 +1,8 @@
-import type { LinksFunction, MetaFunction } from '@remix-run/node'
+import type {
+    ErrorBoundaryComponent,
+    LinksFunction,
+    MetaFunction,
+} from '@remix-run/node'
 import {
     Links,
     LiveReload,
@@ -20,7 +24,6 @@ import { useHotkeys, useLocalStorage } from '@mantine/hooks'
 import { NotificationsProvider } from '@mantine/notifications'
 
 import stylesheetUrl from './styles.css'
-import type { ErrorBoundaryComponent } from '@remix-run/node'
 import { ModalsProvider } from '@mantine/modals'
 
 export const meta: MetaFunction = () => ({

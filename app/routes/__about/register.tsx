@@ -10,9 +10,18 @@ import { message, regex } from '~/utils/password-requirements'
 import { getValidationErrorObject } from '~/utils/validation.server'
 
 const bodySchema = z.object({
-    username: z.string().min(1, 'Username is required').max(64, 'Usernames should not be longer than 64 characters'),
-    firstName: z.string().min(1, 'First name is required').max(64, 'First Name should not be longer than 64 characters'),
-    lastName: z.string().min(1, 'Last name is required').max(64, 'Last Name should not be longer than 64 characters'),
+    username: z
+        .string()
+        .min(1, 'Username is required')
+        .max(64, 'Usernames should not be longer than 64 characters'),
+    firstName: z
+        .string()
+        .min(1, 'First name is required')
+        .max(64, 'First Name should not be longer than 64 characters'),
+    lastName: z
+        .string()
+        .min(1, 'Last name is required')
+        .max(64, 'Last Name should not be longer than 64 characters'),
     email: z.string().min(1, 'Email is required').email('Invalid email'),
     password: z
         .string()

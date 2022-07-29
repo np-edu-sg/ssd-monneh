@@ -8,7 +8,6 @@ import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { requireUser } from '~/utils/session.server'
 import { Role } from '~/utils/roles'
-import { Prisma } from '@prisma/client'
 import { audit } from '~/utils/audit.server'
 
 interface ActionData {
