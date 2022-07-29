@@ -252,6 +252,18 @@ export const action: ActionFunction = async ({ request, params }) => {
     return json({})
 }
 
+const TransactionStateMessages = {
+    [TransactionState.Pending]: 'Pending approval',
+    [TransactionState.Approved]: 'Approved',
+    [TransactionState.Rejected]: 'Rejected',
+}
+
+const TransactionStateBadgeColor = {
+    [TransactionState.Pending]: 'gray',
+    [TransactionState.Approved]: 'green',
+    [TransactionState.Rejected]: 'red',
+}
+
 export default function TransactionPage() {
     const submit = useSubmit()
     const data = useLoaderData<LoaderData>()
@@ -313,20 +325,9 @@ export default function TransactionPage() {
 
                 <Badge
                     size={'lg'}
-                    color={
-                        data.transaction.state === TransactionState.Pending
-                            ? 'gray'
-                            : data.transaction.state ===
-                              TransactionState.Approved
-                            ? 'green'
-                            : 'red'
-                    }
+                    color={TransactionStateBadgeColor[data.transaction.state]}
                 >
-                    {data.transaction.state === TransactionState.Pending
-                        ? 'Pending approval'
-                        : data.transaction.state === TransactionState.Approved
-                        ? 'Approved'
-                        : 'Rejected'}
+                    {TransactionStateMessages[data.transaction.state]}
                 </Badge>
             </Group>
 
@@ -527,11 +528,12 @@ export default function TransactionPage() {
                                                     weight={600}
                                                 >
                                                     You do not have permission
-                                                    to approve this transaction
+                                                    to review this transaction
                                                 </Text>
                                                 <Text color={'red'} mb={'sm'}>
                                                     You must be the reviewer to
-                                                    approve this transaction
+                                                    review this transaction
+                                                    (duh)
                                                 </Text>
                                             </>
                                         )}

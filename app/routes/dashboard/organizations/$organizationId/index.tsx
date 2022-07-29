@@ -31,6 +31,9 @@ import { ChevronRight, DoorExit, Settings } from 'tabler-icons-react'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { useModals } from '@mantine/modals'
 import { Role } from '~/utils/roles'
+import { useMemo } from 'react'
+import { TransactionCard } from '~/components'
+import type { TransactionState } from '@prisma/client'
 
 export const action: ActionFunction = async ({ request, params }) => {
     invariant(params.organizationId, 'Expected params.organizationId')
@@ -60,7 +63,23 @@ export const action: ActionFunction = async ({ request, params }) => {
 }
 
 interface LoaderData {
+    username: string
     canLeaveOrganization: boolean
+    transactions: {
+        id: number
+        entryDateTime: string
+        transactionValue: number
+        state: TransactionState
+        wallet: {
+            id: number
+        }
+        creator: {
+            username: string
+        }
+        reviewer: {
+            username: string
+        }
+    }[]
     organization: {
         id: number
         name: string
@@ -88,7 +107,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     invariant(params.organizationId, 'Expected params.organizationId')
     const { username } = await requireUser(request)
 
-    const id = parseInt(params.organizationId) || 0
+    const id = parseInt(params.organizationId)
     const role = await requireAuthorization(username, id, () => true)
 
     const organization = await db.organization.findUnique({
@@ -111,6 +130,55 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         },
     })
 
+    const transactions = await db.transaction.findMany({
+        where: {
+            AND: [
+                {
+                    wallet: {
+                        organization: {
+                            id,
+                        },
+                    },
+                },
+                {
+                    OR: [
+                        {
+                            creator: {
+                                username,
+                            },
+                        },
+                        {
+                            reviewer: {
+                                username,
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+        select: {
+            id: true,
+            entryDateTime: true,
+            transactionValue: true,
+            state: true,
+            wallet: {
+                select: {
+                    id: true,
+                },
+            },
+            creator: {
+                select: {
+                    username: true,
+                },
+            },
+            reviewer: {
+                select: {
+                    username: true,
+                },
+            },
+        },
+    })
+
     if (!organization)
         throw json('Organization does not exist', { status: 404 })
 
@@ -118,7 +186,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         return redirect(`/dashboard/organizations/${id}/setup`)
 
     return json<LoaderData>({
+        username,
         canLeaveOrganization: role.role !== Role.Owner,
+        transactions: transactions.map((t) => ({
+            ...t,
+            entryDateTime: t.entryDateTime.toISOString(),
+            transactionValue: t.transactionValue.toNumber(),
+        })),
         organization: {
             ...organization,
             wallets: organization.wallets.map((v) => ({
@@ -167,7 +241,8 @@ function WalletCard({ id, name, balance }: WalletCardProps) {
 export default function OrganizationPage() {
     const modals = useModals()
     const submit = useSubmit()
-    const { organization, canLeaveOrganization } = useLoaderData<LoaderData>()
+    const { organization, canLeaveOrganization, transactions, username } =
+        useLoaderData<LoaderData>()
 
     const openConfirmModal = () =>
         modals.openConfirmModal({
@@ -188,6 +263,20 @@ export default function OrganizationPage() {
             labels: { confirm: 'Confirm', cancel: 'Cancel' },
             onConfirm: () => submit(null, { method: 'delete' }),
         })
+
+    const assignedTransactions = useMemo(
+        () =>
+            transactions.filter(
+                ({ reviewer }) => reviewer.username === username
+            ),
+        [transactions, username]
+    )
+
+    const createdTransactions = useMemo(
+        () =>
+            transactions.filter(({ creator }) => creator.username === username),
+        [transactions, username]
+    )
 
     return (
         <div>
@@ -235,9 +324,37 @@ export default function OrganizationPage() {
                     Reviews assigned to you
                 </Text>
 
+                <Stack spacing={'sm'}>
+                    {assignedTransactions.length === 0 ? (
+                        <Text color={'dimmed'}>No transactions assigned!</Text>
+                    ) : (
+                        assignedTransactions.map((transaction) => (
+                            <TransactionCard
+                                key={transaction.id}
+                                linkPrefix={`./wallets/${transaction.wallet.id}/transactions`}
+                                {...transaction}
+                            />
+                        ))
+                    )}
+                </Stack>
+
                 <Text size={'xl'} weight={600}>
                     Your reviews
                 </Text>
+
+                <Stack spacing={'sm'}>
+                    {createdTransactions.length === 0 ? (
+                        <Text color={'dimmed'}>No transactions created!</Text>
+                    ) : (
+                        createdTransactions.map((transaction) => (
+                            <TransactionCard
+                                key={transaction.id}
+                                linkPrefix={`./wallets/${transaction.wallet.id}/transactions`}
+                                {...transaction}
+                            />
+                        ))
+                    )}
+                </Stack>
             </Stack>
 
             <MediaQuery smallerThan={'sm'} styles={{ display: 'none' }}>

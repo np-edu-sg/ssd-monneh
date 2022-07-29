@@ -17,7 +17,6 @@ import {
     Anchor,
     Breadcrumbs,
     Button,
-    Card,
     Center,
     Divider,
     Group,
@@ -26,14 +25,13 @@ import {
     Text,
     TextInput,
 } from '@mantine/core'
-import { useFormattedCurrency } from '~/hooks/formatter'
 import { Edit, Plus, Trash } from 'tabler-icons-react'
-import { useMemo } from 'react'
 import type { TransactionState } from '@prisma/client'
 import { useModals } from '@mantine/modals'
 import { useForm } from '@mantine/form'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
+import { TransactionCard } from '~/components'
 
 const updateWalletBodySchema = z.object({
     name: z
@@ -167,32 +165,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             transactions,
         },
     })
-}
-
-interface TransactionCardProps {
-    id: number
-    entryDateTime: string
-    transactionValue: number
-}
-
-function TransactionCard({
-    id,
-    entryDateTime,
-    transactionValue,
-}: TransactionCardProps) {
-    const value = useFormattedCurrency(transactionValue)
-    const dateString = useMemo(() => {
-        return new Date(entryDateTime).toLocaleDateString()
-    }, [entryDateTime])
-
-    return (
-        <Card to={`./transactions/${id}`} component={NavLink}>
-            <Group position={'apart'}>
-                <Text>{dateString}</Text>
-                <Text>{value}</Text>
-            </Group>
-        </Card>
-    )
 }
 
 function UpdateWalletName({
@@ -329,7 +301,11 @@ export default function WalletPage() {
 
             <Stack spacing={'sm'}>
                 {data.wallet.transactions.map((transaction) => (
-                    <TransactionCard key={transaction.id} {...transaction} />
+                    <TransactionCard
+                        key={transaction.id}
+                        linkPrefix={'./transactions'}
+                        {...transaction}
+                    />
                 ))}
             </Stack>
         </div>
