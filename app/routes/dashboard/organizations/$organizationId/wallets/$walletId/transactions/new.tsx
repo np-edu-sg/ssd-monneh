@@ -39,6 +39,7 @@ import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { TransactionState } from '@prisma/client'
 import { useDebounceFn } from 'ahooks'
+import { userSearchSchema } from '~/utils/user-search.server'
 
 enum Action {
     UserSearch = 'user-search',
@@ -52,7 +53,7 @@ interface BaseActionData {
 
 interface UserSearchActionData extends BaseActionData {
     readonly action: Action.UserSearch
-    users: { label: string; value: string }[]
+    users?: { label: string; value: string }[]
 }
 
 interface CreateTransactionActionData extends BaseActionData {
@@ -100,14 +101,22 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     switch (action) {
         case Action.UserSearch: {
-            const search = formData.get('search')
-            if (!search || typeof search !== 'string') {
+            let search = formData.get('search')
+
+            const result = await userSearchSchema.safeParseAsync(search)
+            if (!result.success) {
                 return json<ActionData>({
                     action: Action.UserSearch,
-                    users: [],
+                    errors: {
+                        reviewer: result.error.issues.reduce(
+                            (a, v) => `${a} ${v.message}.`,
+                            ''
+                        ),
+                    },
                 })
             }
 
+            search = result.data
             const data = await db.user.findMany({
                 select: { username: true, firstName: true, lastName: true },
                 where: {
@@ -441,7 +450,7 @@ export default function NewTransactionPage() {
                                     itemComponent={AutoCompleteItem}
                                     data={
                                         actionData?.action === Action.UserSearch
-                                            ? actionData.users
+                                            ? actionData.users ?? []
                                             : []
                                     }
                                     {...form.getInputProps('reviewer')}

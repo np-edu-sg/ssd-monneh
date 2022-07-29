@@ -20,7 +20,7 @@ import { db } from '~/utils/db.server'
 import invariant from 'tiny-invariant'
 import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
-import { ChevronRight, Door, DoorExit, Settings } from 'tabler-icons-react'
+import { ChevronRight, DoorExit, Settings } from 'tabler-icons-react'
 import { useFormattedCurrency } from '~/hooks/formatter'
 
 interface LoaderData {

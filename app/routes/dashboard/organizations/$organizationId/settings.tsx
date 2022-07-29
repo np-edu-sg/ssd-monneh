@@ -45,6 +45,7 @@ import { useDebounceFn } from 'ahooks'
 import type { AutoCompleteFilter } from '~/components'
 import { AutoCompleteItem, RoleSelectItem } from '~/components'
 import { Plus, Trash } from 'tabler-icons-react'
+import { userSearchSchema } from '~/utils/user-search.server'
 
 // TODO: User search is duplicated across many places, should probably extract it
 enum Action {
@@ -54,7 +55,8 @@ enum Action {
 
 interface UserSearchActionData {
     readonly action: Action.UserSearch
-    users: { label: string; value: string }[]
+    users?: { label: string; value: string }[]
+    errors?: Record<string, string>
 }
 
 interface UpdateMembersActionData {
@@ -93,14 +95,22 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     switch (action) {
         case Action.UserSearch: {
-            const search = formData.get('search')
-            if (!search || typeof search !== 'string') {
+            let search = formData.get('search')
+
+            const result = await userSearchSchema.safeParseAsync(search)
+            if (!result.success) {
                 return json<ActionData>({
                     action: Action.UserSearch,
-                    users: [],
+                    errors: {
+                        username: result.error.issues.reduce(
+                            (a, v) => `${a} ${v.message}.`,
+                            ''
+                        ),
+                    },
                 })
             }
 
+            search = result.data
             const data = await db.user.findMany({
                 select: { username: true, firstName: true, lastName: true },
                 where: {
@@ -468,7 +478,7 @@ export default function OrganizationSettingsPage() {
                                                 data={
                                                     actionData?.action ===
                                                     Action.UserSearch
-                                                        ? actionData.users
+                                                        ? actionData.users ?? []
                                                         : []
                                                 }
                                                 {...form.getListInputProps(

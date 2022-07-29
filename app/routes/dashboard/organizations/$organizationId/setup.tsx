@@ -42,6 +42,7 @@ import { Role } from '~/utils/roles'
 import { Prisma } from '@prisma/client'
 import type { AutoCompleteFilter } from '~/components'
 import { AutoCompleteItem, RoleSelectItem } from '~/components'
+import { userSearchSchema } from '~/utils/user-search.server'
 
 enum Action {
     UserSearch = 'user-search',
@@ -50,7 +51,8 @@ enum Action {
 
 interface UserSearchActionData {
     readonly action: Action.UserSearch
-    users: { label: string; value: string }[]
+    users?: { label: string; value: string }[]
+    errors?: Record<string, string>
 }
 
 interface AddMembersActionData {
@@ -88,14 +90,22 @@ export const action: ActionFunction = async ({ request, params }) => {
 
     switch (action) {
         case Action.UserSearch: {
-            const search = formData.get('search')
-            if (!search || typeof search !== 'string') {
+            let search = formData.get('search')
+
+            const result = await userSearchSchema.safeParseAsync(search)
+            if (!result.success) {
                 return json<ActionData>({
                     action: Action.UserSearch,
-                    users: [],
+                    errors: {
+                        username: result.error.issues.reduce(
+                            (a, v) => `${a} ${v.message}.`,
+                            ''
+                        ),
+                    },
                 })
             }
 
+            search = result.data
             const data = await db.user.findMany({
                 select: { username: true, firstName: true, lastName: true },
                 where: {
@@ -275,8 +285,7 @@ export default function OrganizationSetupPage() {
     const loaderData = useLoaderData<LoaderData>()
 
     useEffect(() => {
-        if (actionData?.action !== Action.AddMembers) return
-        if (!actionData.errors) return
+        if (!actionData?.errors) return
 
         showNotification({
             color: 'red',
@@ -427,7 +436,7 @@ export default function OrganizationSetupPage() {
                                                 data={
                                                     actionData?.action ===
                                                     Action.UserSearch
-                                                        ? actionData.users
+                                                        ? actionData.users ?? []
                                                         : []
                                                 }
                                                 {...form.getListInputProps(
