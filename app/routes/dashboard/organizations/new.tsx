@@ -96,8 +96,8 @@ export default function NewOrganization() {
                     <TextInput
                         size={'md'}
                         placeholder={'Organization name'}
-                        error={data?.errors?.email}
                         {...form.getInputProps('name')}
+                        error={data?.errors?.name}
                     />
 
                     <div>
