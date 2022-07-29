@@ -20,6 +20,7 @@ import {
     Card,
     Group,
     SimpleGrid,
+    Skeleton,
     Stack,
     Text,
 } from '@mantine/core'
@@ -32,6 +33,7 @@ import { useMemo } from 'react'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { audit } from '~/utils/audit.server'
+import { ClientOnly } from 'remix-utils'
 
 interface LoaderData {
     username: string
@@ -379,18 +381,32 @@ export default function TransactionPage() {
                         <Text size={'sm'} color={'dimmed'} mb={'sm'}>
                             Spent on
                         </Text>
-                        <Group>
-                            <Text>{spendDateTime}</Text>
-                        </Group>
+                        <ClientOnly
+                            fallback={<Skeleton height={10} width={100} />}
+                        >
+                            {() => (
+                                <Group>
+                                    <Text>{spendDateTime}</Text>
+                                </Group>
+                            )}
+                        </ClientOnly>
                     </Group>
 
                     <Group position={'apart'} align={'center'}>
                         <Text size={'sm'} color={'dimmed'} mb={'sm'}>
                             Created on
                         </Text>
-                        <Group>
-                            <Text color={'dimmed'}>{entryDateTime}</Text>
-                        </Group>
+                        <ClientOnly
+                            fallback={<Skeleton height={10} width={100} />}
+                        >
+                            {() => (
+                                <Group>
+                                    <Text color={'dimmed'}>
+                                        {entryDateTime}
+                                    </Text>
+                                </Group>
+                            )}
+                        </ClientOnly>
                     </Group>
 
                     <div>
