@@ -296,18 +296,23 @@ export default function OrganizationPage() {
                             Add wallet
                         </Button>
 
-                        {canLeaveOrganization && (
-                            <Menu>
-                                <Menu.Label>Danger zone</Menu.Label>
-                                <Menu.Item
-                                    color={'red'}
-                                    icon={<DoorExit size={14} />}
-                                    onClick={openConfirmModal}
-                                >
-                                    Leave organization
-                                </Menu.Item>
-                            </Menu>
-                        )}
+                        <Menu>
+                            <Menu.Item component={NavLink} to={'./audit'}>
+                                Audit logs
+                            </Menu.Item>
+                            {canLeaveOrganization && (
+                                <>
+                                    <Menu.Label>Danger zone</Menu.Label>
+                                    <Menu.Item
+                                        color={'red'}
+                                        icon={<DoorExit size={14} />}
+                                        onClick={openConfirmModal}
+                                    >
+                                        Leave organization
+                                    </Menu.Item>
+                                </>
+                            )}
+                        </Menu>
                     </Group>
                 </Group>
                 {organization.wallets.length === 0 ? (
