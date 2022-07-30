@@ -95,6 +95,8 @@ export const action: ActionFunction = async ({ request, params }) => {
     invariant(params.organizationId, 'Expected params.organizationId')
     invariant(params.walletId, 'Expected params.walletId')
 
+    const DAILY_TRANSACTION_LIMIT = process.env.DAILY_TRANSACTION_LIMIT ?? 5
+
     const { username } = await requireUser(request)
 
     const formData = await request.formData()
@@ -189,6 +191,25 @@ export const action: ActionFunction = async ({ request, params }) => {
 
             invariant(wallet, 'Expected wallet')
 
+            const transactionsCreatedToday = await db.transaction.findMany({
+                where: {
+                    walletId,
+                    creatorUsername: username,
+                    entryDateTime: {
+                        gte: new Date(new Date().setUTCHours(0, 0, 0, 0)),
+                    },
+                },
+            })
+
+            if (transactionsCreatedToday.length >= DAILY_TRANSACTION_LIMIT) {
+                return json<ActionData>({
+                    action: Action.CreateTransaction,
+                    errors: {
+                        transactionValue: `You've already created the maximum number of transactions allowed today (${DAILY_TRANSACTION_LIMIT}), try again tomorrow!`,
+                    },
+                })
+            }
+
             const { notes, reviewer, type } = result.data
             if (type === TransactionType.Out) {
                 if (wallet.balance.toNumber() < transactionValueResult.data) {
@@ -227,7 +248,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                             id: wallet.transactionCount + 1,
                             notes,
                             state: TransactionState.Pending,
-                            entryDateTime: new Date(Date.now()),
+                            entryDateTime: new Date(),
                             spendDateTime: result.data.spendDateTime,
                             transactionValue: transactionValueResult.data,
                             wallet: {

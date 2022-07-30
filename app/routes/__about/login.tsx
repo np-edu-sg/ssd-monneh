@@ -48,7 +48,7 @@ export const action: ActionFunction = async ({ request }) => {
         )
     }
 
-    return createUserSession(user, '/dashboard')
+    if (user) return createUserSession(user, '/dashboard')
 }
 
 export default function LoginPage() {

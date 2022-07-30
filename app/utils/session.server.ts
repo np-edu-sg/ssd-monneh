@@ -27,8 +27,6 @@ export interface UserSessionData {
     firstName: string
     lastName: string
     email: string
-
-    [key: string]: string
 }
 
 const { SESSION_SECRET, SESSION_COOKIE_NAME } = process.env
@@ -93,6 +91,15 @@ export async function login({ username, password }: LoginForm) {
     })
     if (!user) return null
 
+    if (
+        user.lastFailedLoginAttempt &&
+        user.lastFailedLoginAttempt >=
+            new Date(new Date().setUTCHours(0, 0, 0, 0)) &&
+        user.failedLoginAttempts >= 10
+    ) {
+        return null
+    }
+
     const passwordValid = await new Promise<boolean>((resolve, reject) => {
         const [hash, salt] = user.passwordHash.split(':')
         scrypt(password, salt, 32, (err, derivedKey) => {
@@ -100,7 +107,32 @@ export async function login({ username, password }: LoginForm) {
             else resolve(hash === derivedKey.toString('hex'))
         })
     })
-    if (!passwordValid) return null
+    if (!passwordValid) {
+        await db.user.update({
+            where: {
+                username,
+            },
+            data: {
+                lastFailedLoginAttempt: new Date(),
+                failedLoginAttempts: {
+                    increment: 1,
+                },
+            },
+        })
+        return null
+    }
+
+    if (user.lastFailedLoginAttempt) {
+        await db.user.update({
+            where: {
+                username,
+            },
+            data: {
+                lastFailedLoginAttempt: undefined,
+                failedLoginAttempts: 0,
+            },
+        })
+    }
 
     return user
 }
@@ -153,6 +185,15 @@ export async function createUserSession(
             },
         })
     }
+}
+
+export async function logout(request: Request) {
+    const session = await getUserSession(request)
+    return redirect('/login', {
+        headers: {
+            'Set-Cookie': await storage.destroySession(session),
+        },
+    })
 }
 
 export async function requireUser(

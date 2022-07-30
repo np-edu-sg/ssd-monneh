@@ -11,6 +11,7 @@ import {
 import {
     Box,
     Button,
+    Group,
     PasswordInput,
     SimpleGrid,
     Stack,
@@ -32,7 +33,7 @@ import { message, regex } from '~/utils/password-requirements'
 import { getValidationErrorObject } from '~/utils/validation.server'
 
 interface LoaderData {
-    user: UserSessionData
+    user: UserSessionData & Record<string, string>
 }
 
 interface ActionData {
@@ -370,6 +371,14 @@ export default function ProfilePage() {
                     </Box>
                 </div>
             </SimpleGrid>
+
+            <Group position={'right'}>
+                <form action={'/logout'} method={'post'}>
+                    <Button type={'submit'} variant={'subtle'}>
+                        Logout
+                    </Button>
+                </form>
+            </Group>
         </Stack>
     )
 }

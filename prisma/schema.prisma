@@ -38,14 +38,16 @@ model Organization {
 }
 
 model User {
-  username             String               @id @db.VarChar(64)
-  email                String               @unique
-  firstName            String               @db.VarChar(64)
-  lastName             String               @db.VarChar(64)
-  passwordHash         String
-  reviewedTransactions Transaction[]        @relation("ReviewedTransactions")
-  createdTransactions  Transaction[]        @relation("CreatedTransactions")
-  organizations        OrganizationToUser[]
+  username               String               @id @db.VarChar(64)
+  email                  String               @unique
+  firstName              String               @db.VarChar(64)
+  lastName               String               @db.VarChar(64)
+  passwordHash           String
+  lastFailedLoginAttempt DateTime?
+  failedLoginAttempts    Int                  @default(0)
+  reviewedTransactions   Transaction[]        @relation("ReviewedTransactions")
+  createdTransactions    Transaction[]        @relation("CreatedTransactions")
+  organizations          OrganizationToUser[]
 
   @@fulltext([username, email, firstName, lastName])
 }
