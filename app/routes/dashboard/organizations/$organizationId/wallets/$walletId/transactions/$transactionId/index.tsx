@@ -122,7 +122,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         transaction: {
             ...transaction,
             spendDateTime: transaction.spendDateTime.toISOString(),
-            entryDateTime: transaction.spendDateTime.toISOString(),
+            entryDateTime: transaction.entryDateTime.toISOString(),
             transactionValue: transaction.transactionValue.toNumber(),
             wallet: {
                 ...transaction.wallet,
