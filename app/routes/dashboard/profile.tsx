@@ -1,4 +1,8 @@
-import type { ActionFunction, LoaderFunction } from '@remix-run/node'
+import type {
+    ActionFunction,
+    ErrorBoundaryComponent,
+    LoaderFunction,
+} from '@remix-run/node'
 import { json } from '@remix-run/node'
 import type { ThrownResponse } from '@remix-run/react'
 import {
@@ -11,6 +15,7 @@ import {
 import {
     Box,
     Button,
+    Center,
     Group,
     PasswordInput,
     SimpleGrid,
@@ -61,10 +66,23 @@ export const loader: LoaderFunction = async ({ request }) => {
 }
 
 const updateBodySchema = z.object({
-    username: z.string().min(1, 'Username is required'),
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
-    email: z.string().min(1, 'Email is required').email('Invalid email'),
+    username: z
+        .string()
+        .min(1, 'Username is required')
+        .max(64, 'Username cannot be longer than 64 characters'),
+    firstName: z
+        .string()
+        .min(1, 'First name is required')
+        .max(64, 'First name cannot be longer than 64 characters'),
+    lastName: z
+        .string()
+        .min(1, 'Last name is required')
+        .max(64, 'Last name cannot be longer than 64 characters'),
+    email: z
+        .string()
+        .min(1, 'Email is required')
+        .email('Invalid email')
+        .max(191, 'Email cannot be longer than 64 characters'),
 })
 
 const updatePasswordBodySchema = z
@@ -380,5 +398,30 @@ export default function ProfilePage() {
                 </form>
             </Group>
         </Stack>
+    )
+}
+
+export const ErrorBoundary: ErrorBoundaryComponent = ({ error }) => {
+    return (
+        <Center
+            p={'lg'}
+            component={'section'}
+            sx={(theme) => ({
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
+                        : theme.colors.red[4],
+                height: '100%',
+            })}
+        >
+            <Stack>
+                <Text weight={600} size={'xl'}>
+                    {error.name}
+                </Text>
+                <Text>
+                    An unexpected error occurred, our team is definitely on it!
+                </Text>
+            </Stack>
+        </Center>
     )
 }

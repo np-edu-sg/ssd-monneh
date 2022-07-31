@@ -14,7 +14,10 @@ interface ActionData {
 
 const bodySchema = z
     .object({
-        username: z.string().min(1, 'Username is required'),
+        username: z
+            .string()
+            .min(1, 'Username is required')
+            .max(64, 'Username cannot be longer than 64 characters'),
         password: z.string().min(1, 'Password is required'),
     })
     .strict()
