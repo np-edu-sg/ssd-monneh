@@ -2,9 +2,48 @@
 
 * Money tracker for everyone
 
+Access the hosted version at [https://monneh.vercel.app](https://monneh.vercel.app)!
+
 This project uses the Remix framework, please see the documentation below on how to understand the code.
 
 * [Remix Docs](https://remix.run/docs)
+
+## Quick start
+
+To run Monneh on your local machine, you must have the following installed:
+
+* NodeJS v16 and above
+* PNPM
+* MySQL
+
+After you've finished installing, you need to configure Monneh with some basic required environment variables.
+
+An example file is provided in `.example.env`. Copy this file and rename it to `.env`, replace the variables with
+appropriate values.
+
+You will need to create the required tables in your MySQL database in order to run Monneh. In your terminal of choice,
+run:
+
+```shell
+cd /path/to/monneh
+prisma db push
+```
+
+After you have successfully created the tables, you can start Monneh by running:
+
+```shell
+pnpm dev
+```
+
+### Common errors
+
+`prisma db push` does not work because `prisma` cannot be found.
+
+You can try running Prisma with `pnpx` instead:
+
+```shell
+pnpx prisma generate
+```
 
 ## Deployment
 
