@@ -4,8 +4,16 @@ import { requireUser } from '~/utils/session.server'
 import { requireAuthorization } from '~/utils/authorization.server'
 import invariant from 'tiny-invariant'
 import { db } from '~/utils/db.server'
-import { NavLink, useLoaderData, useParams } from '@remix-run/react'
-import { Anchor, Breadcrumbs, ScrollArea, Table, Text } from '@mantine/core'
+import type { ThrownResponse } from '@remix-run/react'
+import { NavLink, useCatch, useLoaderData, useParams } from '@remix-run/react'
+import {
+    Anchor,
+    Breadcrumbs,
+    Center,
+    ScrollArea,
+    Table,
+    Text,
+} from '@mantine/core'
 
 interface LoaderData {
     organization: {
@@ -115,5 +123,26 @@ export default function OrganizationAuditPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+export function CatchBoundary() {
+    const error = useCatch<ThrownResponse>()
+
+    return (
+        <Center
+            component={'section'}
+            sx={(theme) => ({
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
+                        : theme.colors.red[4],
+                height: '100%',
+            })}
+        >
+            <Text weight={600} size={'xl'}>
+                {error.status} {error.data}
+            </Text>
+        </Center>
     )
 }
