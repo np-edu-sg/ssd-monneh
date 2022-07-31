@@ -75,7 +75,10 @@ const createTransactionBodySchema = (requesterUsername: string) =>
         spendDateTime: z.string().refine((value) => {
             return new Date(value) < new Date()
         }),
-        transactionValue: z.string().regex(/^\d+$/).transform(Number),
+        transactionValue: z
+            .string()
+            .regex(/^-?(0|[1-9]\d*)(\.\d+)?$/, 'Value must be a number')
+            .transform(Number),
         reviewer: z
             .string()
             .min(1, 'Reviewer is required')

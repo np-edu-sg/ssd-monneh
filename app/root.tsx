@@ -113,7 +113,9 @@ export const ErrorBoundary: ErrorBoundaryComponent = ({ error }) => {
                 <Text weight={600} size={'xl'}>
                     {error.name}
                 </Text>
-                <Text>{error.message}</Text>
+                <Text>
+                    An unexpected error occurred, our team is definitely on it!
+                </Text>
             </Stack>
         </Center>
     )
