@@ -37,6 +37,7 @@ import { ClientOnly } from 'remix-utils'
 
 interface LoaderData {
     username: string
+    canApproveTransaction: boolean
     transaction: {
         notes: string
         state: TransactionState
@@ -117,8 +118,19 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         throw json('Transaction does not exist', { status: 404 })
     }
 
+    let canApproveTransaction = false
+    try {
+        await requireAuthorization(
+            username,
+            organizationId,
+            (role) => role.allowApproveTransactions
+        )
+        canApproveTransaction = true
+    } catch {}
+
     return json<LoaderData>({
         username,
+        canApproveTransaction,
         transaction: {
             ...transaction,
             spendDateTime: transaction.spendDateTime.toISOString(),
@@ -281,7 +293,9 @@ export default function TransactionPage() {
         [data]
     )
     const hasPermission = useMemo(
-        () => data.transaction.reviewer.username === data.username,
+        () =>
+            data.canApproveTransaction &&
+            data.transaction.reviewer.username === data.username,
         [data]
     )
 
