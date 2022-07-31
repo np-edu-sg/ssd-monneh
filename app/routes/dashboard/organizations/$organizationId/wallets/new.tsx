@@ -30,7 +30,11 @@ const createWalletBodySchema = z.object({
     name: z
         .string()
         .min(1, 'Wallet name is required')
-        .max(64, 'Wallet Name must be less than or equals to 64 characters'),
+        .max(64, 'Wallet Name must be less than or equals to 64 characters')
+        .refine(
+            (v) => v.trim().length > 0,
+            'Organization name must not be empty'
+        ),
     balance: z.string().regex(/^\d+$/).transform(Number),
 })
 
