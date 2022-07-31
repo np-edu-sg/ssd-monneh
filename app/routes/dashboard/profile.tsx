@@ -34,7 +34,6 @@ import {
 } from '~/utils/session.server'
 import { db } from '~/utils/db.server'
 import * as z from 'zod'
-import { message, regex } from '~/utils/password-requirements'
 import { getValidationErrorObject } from '~/utils/validation.server'
 
 interface LoaderData {
@@ -65,6 +64,13 @@ export const loader: LoaderFunction = async ({ request }) => {
     return json<LoaderData>({ user })
 }
 
+const requirements = [
+    { re: /[0-9]/, label: 'Includes number' },
+    { re: /[a-z]/, label: 'Includes lowercase letter' },
+    { re: /[A-Z]/, label: 'Includes uppercase letter' },
+    { re: /[$&+,:;=?@#|'<>.^*()%!-]/, label: 'Includes special symbol' },
+]
+
 const updateBodySchema = z.object({
     username: z
         .string()
@@ -90,8 +96,14 @@ const updatePasswordBodySchema = z
         currentPassword: z.string().min(1, 'Current password is required'),
         newPassword: z
             .string()
-            .min(1, 'New password is required')
-            .regex(regex, message),
+            .min(8, 'Password must be at least 8 characters')
+            .regex(/[0-9]/, 'Password must include a number')
+            .regex(/[a-z]/, 'Password must include a number')
+            .regex(/[A-Z]/, 'Password must include a number')
+            .regex(
+                /[$&+,:;=?@#|'<>.^*()%!-]/,
+                'Password must include a special symbol'
+            ),
         confirmPassword: z.string().min(1, 'Confirm password is required'),
     })
     .refine(
@@ -208,7 +220,16 @@ export default function ProfilePage() {
         validate: {
             currentPassword: (value) =>
                 value.length > 0 ? null : 'Current password is required',
-            newPassword: (value) => (regex.test(value) ? null : message),
+            newPassword: (value) => {
+                return requirements
+                    .map((r) => r.re.test(value))
+                    .reduce<string | null>((a, v) => {
+                        if (!v) {
+                            a = 'Invalid password'
+                        }
+                        return a
+                    }, null)
+            },
             confirmPassword: (value, { newPassword }) =>
                 value === newPassword
                     ? null

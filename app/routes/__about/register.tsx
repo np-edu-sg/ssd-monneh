@@ -15,7 +15,6 @@ import { useForm } from '@mantine/form'
 
 import * as z from 'zod'
 import { createUserSession, register } from '~/utils/session.server'
-import { message, regex } from '~/utils/password-requirements'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { IconCheck, IconX } from '@tabler/icons'
 
