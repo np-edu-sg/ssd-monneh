@@ -66,8 +66,14 @@ export async function register({
 
     let user = await db.user.findFirst({
         where: {
-            username,
-            email,
+            OR: [
+                {
+                    username,
+                },
+                {
+                    email,
+                },
+            ],
         },
     })
     if (user) return null

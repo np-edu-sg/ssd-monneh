@@ -1,4 +1,13 @@
-import { Button, Center, PasswordInput, Text, TextInput } from '@mantine/core'
+import {
+    Box,
+    Button,
+    Center,
+    Group,
+    PasswordInput,
+    Progress,
+    Text,
+    TextInput,
+} from '@mantine/core'
 import type { ActionFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
 import { Form, useActionData, useSubmit, useTransition } from '@remix-run/react'
@@ -8,6 +17,14 @@ import * as z from 'zod'
 import { createUserSession, register } from '~/utils/session.server'
 import { message, regex } from '~/utils/password-requirements'
 import { getValidationErrorObject } from '~/utils/validation.server'
+import { IconCheck, IconX } from '@tabler/icons'
+
+const requirements = [
+    { re: /[0-9]/, label: 'Includes number' },
+    { re: /[a-z]/, label: 'Includes lowercase letter' },
+    { re: /[A-Z]/, label: 'Includes uppercase letter' },
+    { re: /[$&+,:;=?@#|'<>.^*()%!-]/, label: 'Includes special symbol' },
+]
 
 const bodySchema = z.object({
     username: z
@@ -25,8 +42,14 @@ const bodySchema = z.object({
     email: z.string().min(1, 'Email is required').email('Invalid email'),
     password: z
         .string()
-        .min(1, 'New password is required')
-        .regex(regex, message),
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/[0-9]/, 'Password must include a number')
+        .regex(/[a-z]/, 'Password must include a number')
+        .regex(/[A-Z]/, 'Password must include a number')
+        .regex(
+            /[$&+,:;=?@#|'<>.^*()%!-]/,
+            'Password must include a special symbol'
+        ),
 })
 
 interface ActionData {
@@ -68,6 +91,39 @@ export const action: ActionFunction = async ({ request }) => {
     return createUserSession(user, '/dashboard')
 }
 
+function getStrength(password: string) {
+    let multiplier = password.length > 5 ? 0 : 1
+
+    requirements.forEach((requirement) => {
+        if (!requirement.re.test(password)) {
+            multiplier += 1
+        }
+    })
+
+    return Math.max(100 - (100 / (requirements.length + 1)) * multiplier, 0)
+}
+
+function PasswordRequirement({
+    meets,
+    label,
+}: {
+    meets: boolean
+    label: string
+}) {
+    return (
+        <Text color={meets ? 'teal' : 'red'} mt={5} size={'sm'}>
+            <Center inline>
+                {meets ? (
+                    <IconCheck size={14} stroke={1.5} />
+                ) : (
+                    <IconX size={14} stroke={1.5} />
+                )}
+                <Box ml={7}>{label}</Box>
+            </Center>
+        </Text>
+    )
+}
+
 export default function RegisterPage() {
     const submit = useSubmit()
     const transition = useTransition()
@@ -91,9 +147,46 @@ export default function RegisterPage() {
                 value.length > 0 ? null : 'Last name is required',
             email: (value) =>
                 /^\S+@\S+$/.test(value) ? null : 'Invalid email',
-            password: (value) => (regex.test(value) ? null : message),
+            password: (value) => {
+                return requirements
+                    .map((r) => r.re.test(value))
+                    .reduce<string | null>((a, v) => {
+                        if (!v) {
+                            a = 'Invalid password'
+                        }
+                        return a
+                    }, null)
+            },
         },
     })
+
+    const strength = getStrength(form.values.password)
+    const checks = requirements.map((requirement, index) => (
+        <PasswordRequirement
+            key={index}
+            label={requirement.label}
+            meets={requirement.re.test(form.values.password)}
+        />
+    ))
+    const bars = Array(4)
+        .fill(0)
+        .map((_, index) => (
+            <Progress
+                styles={{ bar: { transitionDuration: '0ms' } }}
+                value={
+                    form.values.password.length > 0 && index === 0
+                        ? 100
+                        : strength >= ((index + 1) / 4) * 100
+                        ? 100
+                        : 0
+                }
+                color={
+                    strength > 80 ? 'teal' : strength > 50 ? 'yellow' : 'red'
+                }
+                key={index}
+                size={4}
+            />
+        ))
 
     return (
         <Center component={'section'} style={{ height: '100%' }}>
@@ -101,7 +194,6 @@ export default function RegisterPage() {
                 sx={(theme) => ({
                     padding: theme.spacing.lg,
                     flexDirection: 'column',
-                    marginBottom: '10%',
                     width: '100%',
                     [theme.fn.largerThan('xs')]: {
                         width: '45%',
@@ -165,6 +257,17 @@ export default function RegisterPage() {
                         error={data?.errors?.password}
                         {...form.getInputProps('password')}
                     />
+
+                    <Group spacing={5} grow mt={'xs'} mb={'md'}>
+                        {bars}
+                    </Group>
+
+                    <PasswordRequirement
+                        label={'Has at least 6 characters'}
+                        meets={form.values.password.length > 5}
+                    />
+
+                    {checks}
 
                     <br />
 

@@ -19,6 +19,7 @@ specifiers:
   '@remix-run/react': ^1.6.4
   '@remix-run/serve': ^1.6.4
   '@remix-run/vercel': ^1.6.4
+  '@tabler/icons': ^1.78.1
   '@types/react': ^18.0.15
   '@types/react-dom': ^18.0.6
   '@vercel/node': ^1.15.2
@@ -51,6 +52,7 @@ dependencies:
   '@remix-run/node': 1.6.5_biqbaboplfbrettd7655fr4n2y
   '@remix-run/react': 1.6.5_biqbaboplfbrettd7655fr4n2y
   '@remix-run/vercel': 1.6.5_p67p3atjs3b3hvo37kwk7cltvy
+  '@tabler/icons': 1.78.1_biqbaboplfbrettd7655fr4n2y
   '@vercel/node': 1.15.4
   ahooks: 3.6.2_react@18.2.0
   dayjs: 1.11.4
@@ -2212,6 +2214,21 @@ packages:
     dependencies:
       defer-to-connect: 2.0.1
     dev: true
+
+  /@tabler/icons/1.78.1_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-QT/94Hufvzn4PxsEyN9NTh96XmNaGGgMh7sKcBZ2216pE9B+Ala98KpdNwTKKBlEvRvHw9y14zW4qFYzxGOhZw==}
+    peerDependencies:
+      react: ^16.x || 17.x || 18.x
+      react-dom: ^16.x || 17.x || 18.x
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
 
   /@testing-library/dom/8.16.0:
     resolution: {integrity: sha512-uxF4zmnLHHDlmW4l+0WDjcgLVwCvH+OVLpD8Dfp+Bjfz85prwxWGbwXgJdLtkgjD0qfOzkJF9SmA6YZPsMYX4w==}
