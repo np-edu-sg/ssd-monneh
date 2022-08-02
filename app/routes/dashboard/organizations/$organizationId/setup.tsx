@@ -110,12 +110,20 @@ export const action: ActionFunction = async ({ request, params }) => {
             const data = await db.user.findMany({
                 select: { username: true, firstName: true, lastName: true },
                 where: {
-                    OR: {
-                        username: { search },
-                        firstName: { search },
-                        lastName: { search },
-                        email: { search },
-                    },
+                    OR: [
+                        {
+                            username: { contains: search },
+                        },
+                        {
+                            firstName: { contains: search },
+                        },
+                        {
+                            lastName: { contains: search },
+                        },
+                        {
+                            email: { contains: search },
+                        },
+                    ],
                     NOT: {
                         username: requesterUsername,
                     },
