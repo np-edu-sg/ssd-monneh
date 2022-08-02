@@ -256,7 +256,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                 'wallet',
                 walletId,
                 'update',
-                `Wallet balance was incremented by ${transaction.transactionValue} to ${balance}`
+                `Wallet balance was changed by ${transaction.transactionValue} to ${balance}`
             )
         }
     })

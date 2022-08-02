@@ -32,6 +32,7 @@ import { useForm } from '@mantine/form'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
 import { TransactionCard } from '~/components'
+import { audit } from '~/utils/audit.server'
 
 const updateWalletBodySchema = z.object({
     name: z
@@ -59,11 +60,23 @@ export const action: ActionFunction = async ({ request, params }) => {
                 organizationId,
                 (role) => role.allowDeleteWallets
             )
-            await db.wallet.delete({
-                where: {
-                    id: walletId,
-                },
-            })
+
+            await audit(
+                username,
+                organizationId,
+                'wallet',
+                walletId,
+                'delete',
+                'Deleted wallet',
+                async (prisma) => {
+                    await prisma.wallet.delete({
+                        where: {
+                            id: walletId,
+                        },
+                    })
+                }
+            )
+
             return redirect(`/dashboard/organizations/${organizationId}`)
         }
 
@@ -85,14 +98,24 @@ export const action: ActionFunction = async ({ request, params }) => {
                 })
             }
 
-            await db.wallet.update({
-                where: {
-                    id: walletId,
-                },
-                data: {
-                    name: result.data.name,
-                },
-            })
+            await audit(
+                username,
+                organizationId,
+                'wallet',
+                walletId,
+                'update',
+                `Updated wallet name to ${result.data.name}`,
+                async (prisma) => {
+                    await prisma.wallet.update({
+                        where: {
+                            id: walletId,
+                        },
+                        data: {
+                            name: result.data.name,
+                        },
+                    })
+                }
+            )
 
             return json({})
         }

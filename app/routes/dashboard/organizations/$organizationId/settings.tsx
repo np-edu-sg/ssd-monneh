@@ -228,6 +228,15 @@ export const action: ActionFunction = async ({ request, params }) => {
                     },
                 })
 
+                await audit(
+                    username,
+                    organizationId,
+                    'organization',
+                    organizationId,
+                    'delete',
+                    'Deleted all members'
+                )
+
                 await Promise.all(
                     result.data.members.map(async ({ username, role }) => {
                         try {
@@ -265,6 +274,15 @@ export const action: ActionFunction = async ({ request, params }) => {
                                     },
                                 },
                             })
+
+                            await audit(
+                                username,
+                                organizationId,
+                                'organization',
+                                organizationId,
+                                'update',
+                                `Added member ${username}`
+                            )
                         } catch (e) {
                             if (
                                 e instanceof
