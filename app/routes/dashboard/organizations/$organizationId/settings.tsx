@@ -289,7 +289,7 @@ export const action: ActionFunction = async ({ request, params }) => {
                                 'organization',
                                 organizationId,
                                 'update',
-                                `Added member ${username}`
+                                `Added member with username ${username} and role ${role}`
                             )
                         } catch (e) {
                             if (
