@@ -135,16 +135,16 @@ export const action: ActionFunction = async ({ request, params }) => {
                 where: {
                     OR: [
                         {
-                            username: { contains: search },
+                            username: { equals: search },
                         },
                         {
-                            firstName: { contains: search },
+                            firstName: { equals: search },
                         },
                         {
-                            lastName: { contains: search },
+                            lastName: { equals: search },
                         },
                         {
-                            email: { contains: search },
+                            email: { equals: search },
                         },
                     ],
                     NOT: {
