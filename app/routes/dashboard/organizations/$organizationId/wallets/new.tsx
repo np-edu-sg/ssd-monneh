@@ -1,16 +1,19 @@
 import {
     Anchor,
     Button,
+    Center,
     NumberInput,
     SimpleGrid,
     Stack,
     Text,
     TextInput,
 } from '@mantine/core'
+import type { ThrownResponse } from '@remix-run/react'
 import {
     Form,
     NavLink,
     useActionData,
+    useCatch,
     useParams,
     useSubmit,
     useTransition,
@@ -201,5 +204,26 @@ export default function NewWalletPage() {
                 </Stack>
             </Form>
         </div>
+    )
+}
+
+export function CatchBoundary() {
+    const error = useCatch<ThrownResponse>()
+
+    return (
+        <Center
+            component={'section'}
+            sx={(theme) => ({
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.fn.rgba(theme.colors.red[9], 0.5)
+                        : theme.colors.red[4],
+                height: '100%',
+            })}
+        >
+            <Text weight={600} size={'xl'}>
+                {error.status} {error.data}
+            </Text>
+        </Center>
     )
 }
