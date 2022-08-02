@@ -32,8 +32,9 @@ import {
 } from '@mantine/core'
 import { useFormattedCurrency } from '~/hooks/formatter'
 import { useForm } from '@mantine/form'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { DatePicker } from '@mantine/dates'
+import type { AutoCompleteFilter } from '~/components'
 import { AutoCompleteItem } from '~/components'
 import * as z from 'zod'
 import { getValidationErrorObject } from '~/utils/validation.server'
@@ -489,6 +490,7 @@ export default function NewTransactionPage() {
                                 <Autocomplete
                                     label={'Reviewer'}
                                     placeholder={'Username or email'}
+                                    filter={() => true}
                                     itemComponent={AutoCompleteItem}
                                     data={
                                         actionData?.action === Action.UserSearch
